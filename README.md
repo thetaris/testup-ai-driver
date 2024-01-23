@@ -1,29 +1,13 @@
 # README #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+## How do I get set up?
 
-### What is this repository for? ###
+* `pip install -r requirements.txt`
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+## How to run?
 
-### How do I get set up? ###
+* `python src/app.py`
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+### How to test? ###
 
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+* `curl -X POST http://localhost:5000/api/prompt/device123 --data '<html>hello world</html>' -H 'Content-Type: plain/text'`
