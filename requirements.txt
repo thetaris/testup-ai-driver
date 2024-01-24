@@ -1,2 +1,4 @@
 flask
 requests
+beautifulsoup4
+markdownify
