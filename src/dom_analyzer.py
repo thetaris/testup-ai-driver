@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class DomAnalyzer:
     gpt_api_key = os.getenv("API_KEY")
     gpt_model = os.getenv("GPT_MODEL")
+    gpt_prompt = os.getenv("GPT_PROMPT")
 
     def analyze(self, deviceId, user_prompt, html_doc):
 
@@ -66,7 +67,10 @@ class DomAnalyzer:
 
         # removing unneeded spaces
         logging.info(f"Markdown: {markdown_content}")
-        final_content = f"{markdown_content}\n {user_prompt} \nwrite me the steps to take as a json list. Each entry is an object of 3 fields, first field is action which can be one of: click, enter_text. The second field is css_selector. The third field is optional text. the output format should be"+" {\"steps\":[{\"action\":..,\"css_selector\":...., \"text\":...}]"
+        final_content = f"{markdown_content}\n{user_prompt}\n{self.gpt_prompt}"
+        #"\nwrite me the steps to take as a json list. Each entry is an object of 3 fields, first field is action which can be one of: click, enter_text. The second field is css_selector. The third field is optional text. the output format should be"+" {\"steps\":[{\"action\":..,\"css_selector\":...., \"text\":...}]"
+
+
 
         payload = {
             "model": self.gpt_model,
