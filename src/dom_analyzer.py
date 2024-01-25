@@ -66,7 +66,7 @@ class DomAnalyzer:
 
         # removing unneeded spaces
         logging.info(f"Markdown: {markdown_content}")
-        final_content = f"{markdown_content}\n {user_prompt} \nwrite me the steps to take as a json list. Each entry is an object of 3 fields, first field is action which can be one of: click, enter_text. The second field is css_selector. The third field is optional text. Only return json"
+        final_content = f"{markdown_content}\n {user_prompt} \nwrite me the steps to take as a json list. Each entry is an object of 3 fields, first field is action which can be one of: click, enter_text. The second field is css_selector. The third field is optional text. the output format should be"+" {\"steps\":[{\"action\":..,\"css_selector\":...., \"text\":...}]"
 
         payload = {
             "model": self.gpt_model,
@@ -96,14 +96,11 @@ class DomAnalyzer:
             except json.JSONDecodeError:
                 raise Exception("Error decoding the extracted content as JSON.")
 
+            logging.info(f"Tokens: {total_tokens}")
             # Store in new JSON object
-            extracted_data = {
-                "extracted_content": assistant_message,
-                "total_tokens": total_tokens
-            }
 
-            logging.info(f"Returning: {extracted_data}")
-            return extracted_data
+            logging.info(f"Returning: {assistant_message}")
+            return assistant_message
         else:
             raise Exception(f"No content found in response or invalid response format:{response_data}")
 
@@ -111,8 +108,6 @@ class DomAnalyzer:
         soup = BeautifulSoup(dom, 'html.parser')
 
         for tag in soup.find_all(['li', 'button', 'input', 'textarea', 'a'], id=True):
-            logging.info(f"found {tag}")
-
             # Initialize an empty list to hold the desired attributes
             desired_attributes = []
 
