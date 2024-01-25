@@ -70,7 +70,8 @@ class DomAnalyzer:
 
         payload = {
             "model": self.gpt_model,
-            "messages": [{"role": "user", "content": final_content}]
+            "messages": [{"role": "user", "content": final_content}],
+            "response_format": {"type": "json_object"}
         }
 
         headers = {
@@ -134,7 +135,5 @@ class DomAnalyzer:
 
         # Remove '.postfix' from tag names in the Markdown content
         markdown = re.sub(r'(\w+)\.postfix', r'\1', markdown)
-
-        return markdown
 
         return markdown
