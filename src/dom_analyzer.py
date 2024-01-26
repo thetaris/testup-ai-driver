@@ -119,9 +119,9 @@ class DomAnalyzer:
             if 'id' in tag.attrs:
                 desired_attributes.append(f'id="{tag.attrs["id"]}"')
 
-            # Preserve 'value' attribute, if it exists
-            if 'value' in tag.attrs:
-                desired_attributes.append(f'value="{tag.attrs["value"]}"')
+            for attr, value in tag.attrs.items():
+                if attr != 'class':
+                    desired_attributes.append(f'{attr}="{value}"')
 
             # Join the desired attributes into a single string
             attributes_str = ' '.join(desired_attributes)
