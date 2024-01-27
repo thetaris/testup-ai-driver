@@ -15,6 +15,7 @@ class DomAnalyzer:
     gpt_api_key = os.getenv("API_KEY")
     gpt_model = os.getenv("GPT_MODEL")
     gpt_prompt = os.getenv("GPT_PROMPT")
+    gpt_api = os.getenv("GPT_API")
 
     def analyze(self, deviceId, user_prompt, html_doc):
 
@@ -84,7 +85,7 @@ class DomAnalyzer:
         }
 
         # Send POST request to OpenAI API
-        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+        response = requests.post(self.gpt_api, headers=headers, json=payload)
 
         response_data = response.json()
 
