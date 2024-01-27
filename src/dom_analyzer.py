@@ -115,10 +115,6 @@ class DomAnalyzer:
             # Initialize an empty list to hold the desired attributes
             desired_attributes = []
 
-            # Preserve 'id' attribute
-            if 'id' in tag.attrs:
-                desired_attributes.append(f'id="{tag.attrs["id"]}"')
-
             for attr, value in tag.attrs.items():
                 if attr != 'class':
                     desired_attributes.append(f'{attr}="{value}"')
