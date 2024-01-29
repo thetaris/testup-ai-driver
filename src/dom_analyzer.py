@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from markdownify import markdownify as md
+from gpt_api_spec import api_map
 import requests
 import re
 import sys
@@ -15,7 +16,10 @@ class DomAnalyzer:
     gpt_api_key = os.getenv("API_KEY")
     gpt_model = os.getenv("GPT_MODEL")
     gpt_prompt = os.getenv("GPT_PROMPT")
-    gpt_api = os.getenv("GPT_API")
+
+    def __init__(self):
+        if self.gpt_model not in api_map:
+            raise ValueError(f"Model '{self.gpt_model}' is not supported")
 
     def analyze(self, deviceId, user_prompt, html_doc):
 
@@ -69,34 +73,40 @@ class DomAnalyzer:
         # removing unneeded spaces
         logging.info(f"Markdown: {markdown_content}")
         final_content = f"{markdown_content}\n{user_prompt}\n{self.gpt_prompt}"
-        #"\nwrite me the steps to take as a json list. Each entry is an object of 3 fields, first field is action which can be one of: click, enter_text. The second field is css_selector. The third field is optional text. the output format should be"+" {\"steps\":[{\"action\":..,\"css_selector\":...., \"text\":...}]"
 
-
-
-        payload = {
-            "model": self.gpt_model,
-            "messages": [{"role": "user", "content": final_content}],
-            "response_format": {"type": "json_object"}
-        }
-
+        api_info = api_map[self.gpt_model]
+        payload = api_info['payload'](self.gpt_model, final_content)
+        logging.info(f"sending request {payload}")
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.gpt_api_key}"
         }
 
         # Send POST request to OpenAI API
-        response = requests.post(self.gpt_api, headers=headers, json=payload)
+        response = requests.post(api_info['endpoint'], headers=headers, json=payload)
 
         response_data = response.json()
 
         logging.info(f"Response from openai {response_data}")
 
+        response_object_type = response_data.get('object', '')
+
         if "choices" in response_data and len(response_data["choices"]) > 0:
-            assistant_message_json_str = response_data["choices"][0].get("message", {}).get("content", "")
+            if response_object_type == 'chat.completion':
+                # Handling response for 'chat.completion'
+                assistant_message_json_str = response_data["choices"][0].get("message", {}).get("content", "")
+            elif response_object_type == 'text_completion':
+                # Handling response for 'text_completion'
+                assistant_message_json_str = response_data["choices"][0].get("text", "")
+            else:
+                raise Exception("Unknown response object type.")
+
             total_tokens = response_data["usage"].get("total_tokens", 0)
 
             try:
                 # Parse the extracted content as JSON
+                logging.info(f"assistant_message_json_str = {assistant_message_json_str}")
+
                 assistant_message = json.loads(assistant_message_json_str)
             except json.JSONDecodeError:
                 raise Exception("Error decoding the extracted content as JSON.")
