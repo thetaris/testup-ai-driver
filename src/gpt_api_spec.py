@@ -7,8 +7,7 @@ def payload_chat_completions_json(model, system_content, user_content):
             {"role": "user", "content": user_content},
             {"role": "system", "content": system_content}
         ],
-        "temperature": 0,
-        "top_p": 1
+        "temperature": 0
     }
 
 

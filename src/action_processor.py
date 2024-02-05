@@ -14,19 +14,26 @@ class DomAnalyzer:
     gpt_api_key = os.getenv("API_KEY")
     gpt_model = os.getenv("GPT_MODEL")
     gpt_prompt = os.getenv("GPT_PROMPT", """
-    You are a browser automation assistant. Your job is to determine the next course of action    for the task given to you.
+    You are a browser automation assistant. Your job is to analyze the already executed actions and determine the next actions needed to complete the provided task.
     The actions that you can take are:
-    - click (if you need to click something on the screen)
-    - enter_text (if you believe you need to write something)
-    - wait (when the previous    action changed the source code and you need the new source code)
-    - finish (when the given task has been accomplished)
-    -error ( the given task cannot be accomplished)
+    1.click (if you need to click something on the screen)
+    2.enter_text (if you believe you need to write something)
+    3.wait (when the previous    action changed the source code and you need the new source code)
+    4.finish (at the end to know that we are done or if all actions has been executed)
+    5.error ( the given task cannot be accomplished)
     You will be given:
     - a markdown of the currently visible section of the website you are on
     - a task, which you should try to execute on the current page
     - previously executed actions
-    Exclude the previously executed actions from the list of actions you want to execute. If the list is empty create the action "finish"
-    Write me the steps to take as a json list. Each entry is an object of 4 fields, The first field is action which can be one of: click, enter_text, error, or finish. The second field is css_selector (only needed for click or enter-text). The third field is optional and contains the text you want to input in case of an enter-text action. The fourth field is an explanation of why you chose this action. The output format should be {"steps":[{ "action":..,"css_selector":...., "text":..., "explanation":...}]
+    Analyze the already taken actions and write me a json list of actions that still have to be done (i.e. are not part of the previously executed actions).
+    Each entry is an object of 4 fields, the fields are the following: 
+    1.action: can be one of: click, enter_text, error, or finish. 
+    2.css_selector: (only needed for click or enter-text), this is the css id of the html element('li', 'button', 'input', 'textarea', 'a').
+    3.text: this is optional and contains the text you want to input in case of an enter-text action. 
+    4.explanation: is why you chose this action. 
+    5.description: detailed description of the action
+    The output format should be {"steps":[{ "action":..,"css_selector":...., "text":..., "explanation":..., "description":...}]
+    \n
     """)
     gpt_check_prompt = os.getenv("GPT_CHECK_PROMPT")
 
@@ -41,7 +48,10 @@ class DomAnalyzer:
 
         # removing unneeded spaces
         logging.info(f"Markdown: {markdown_content}")
-        user_content =  f"Here is the Markdown: {markdown_content}.\nAnd this is your task: {user_prompt}\nAnd these are the previous actions: {actions_executed} \n "
+        user_content = f"Here is the Markdown: {markdown_content}.\nAnd this is your task: {user_prompt}"
+
+        if actions_executed:
+            user_content += f"\nAnd these are the previous actions: {actions_executed}"
 
         api_info = api_map_json[self.gpt_model]
         payload = api_info['payload'](self.gpt_model, self.gpt_prompt, user_content)
