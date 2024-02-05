@@ -17,26 +17,11 @@ def process_prompt(deviceId):
     # Extract 'html_doc' and 'user_prompt' from the JSON payload
     html_doc = data.get('html_doc')
     user_prompt = data.get('user_prompt')
-    analysis_result = dom_analyzer.get_actions(deviceId, user_prompt, html_doc)
+    actions_executed = data.get("actions_executed")
+    analysis_result = dom_analyzer.get_actions(deviceId, user_prompt, html_doc, actions_executed)
     print(analysis_result)
 
     return jsonify(analysis_result)
-
-@app.route('/api/prompt-check/<deviceId>', methods=['POST'])
-def check_prompt(deviceId):
-    logger.info("Received prompt from device: " + deviceId)
-    data = request.get_json()
-
-    # Extract 'html_doc' and 'user_prompt' from the JSON payload
-    html_doc = data.get('html_doc')
-    user_prompt = data.get('user_prompt')
-    analysis_result = dom_analyzer.check_actions(deviceId, user_prompt, html_doc)
-    print(analysis_result)
-
-    return {
-        'possible': analysis_result
-    }
-
 
 
 

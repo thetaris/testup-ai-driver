@@ -13,23 +13,38 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class DomAnalyzer:
     gpt_api_key = os.getenv("API_KEY")
     gpt_model = os.getenv("GPT_MODEL")
-    gpt_prompt = os.getenv("GPT_PROMPT")
+    gpt_prompt = os.getenv("GPT_PROMPT", """
+    You are a browser automation assistant. Your job is to determine the next course of action    for the task given to you.
+    The actions that you can take are:
+    - click (if you need to click something on the screen)
+    - enter_text (if you believe you need to write something)
+    - wait (when the previous    action changed the source code and you need the new source code)
+    - finish (when the given task has been accomplished)
+    -error ( the given task cannot be accomplished)
+    You will be given:
+    - a markdown of the currently visible section of the website you are on
+    - a task, which you should try to execute on the current page
+    - previously executed actions
+    Exclude the previously executed actions from the list of actions you want to execute. If the list is empty create the action "finish"
+    Write me the steps to take as a json list. Each entry is an object of 4 fields, The first field is action which can be one of: click, enter_text, error, or finish. The second field is css_selector (only needed for click or enter-text). The third field is optional and contains the text you want to input in case of an enter-text action. The fourth field is an explanation of why you chose this action. The output format should be {"steps":[{ "action":..,"css_selector":...., "text":..., "explanation":...}]
+    """)
     gpt_check_prompt = os.getenv("GPT_CHECK_PROMPT")
 
     def __init__(self):
         if self.gpt_model not in api_map:
             raise ValueError(f"Model '{self.gpt_model}' is not supported")
 
-    def get_actions(self, deviceId, user_prompt, html_doc):
+    def get_actions(self, deviceId, user_prompt, html_doc, actions_executed):
 
+        logging.info(f"System input: {self.gpt_prompt}")
         markdown_content = convert_to_md(html_doc)
 
         # removing unneeded spaces
         logging.info(f"Markdown: {markdown_content}")
-        final_content = f"{markdown_content}\n{user_prompt}\n{self.gpt_prompt}"
+        user_content =  f"Here is the Markdown: {markdown_content}.\nAnd this is your task: {user_prompt}\nAnd these are the previous actions: {actions_executed} \n "
 
         api_info = api_map_json[self.gpt_model]
-        payload = api_info['payload'](self.gpt_model, final_content)
+        payload = api_info['payload'](self.gpt_model, self.gpt_prompt, user_content)
         logging.info(f"sending request {payload}")
         headers = {
             "Content-Type": "application/json",
@@ -60,6 +75,7 @@ class DomAnalyzer:
             try:
                 # Parse the extracted content as JSON
                 logging.info(f"assistant_message_json_str = {assistant_message_json_str}")
+                assistant_message_json_str = assistant_message_json_str.replace("```json", "").replace("```", "").strip()
 
                 assistant_message = json.loads(assistant_message_json_str)
             except json.JSONDecodeError:

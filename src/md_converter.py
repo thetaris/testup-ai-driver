@@ -55,6 +55,9 @@ def convert_to_md(html_doc):
     soup = BeautifulSoup(html_doc, 'html.parser')
 
     for tag in soup.find_all(['li', 'button', 'input', 'textarea', 'a'], id=True):
+        # Exclude hidden elements
+        if tag.get('hidden') == 'true':
+            continue
         # Initialize an empty list to hold the desired attributes
         desired_attributes = []
 

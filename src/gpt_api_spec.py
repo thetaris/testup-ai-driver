@@ -1,33 +1,35 @@
 
 
-def payload_chat_completions_json(model, final_content):
+def payload_chat_completions_json(model, system_content, user_content):
     return {
         "model": model,
-        "messages": [{"role": "user", "content": final_content}],
-        "response_format": {"type": "json_object"}
+        "messages": [
+            {"role": "user", "content": user_content},
+            {"role": "system", "content": system_content}
+        ],
+        "temperature": 0,
+        "top_p": 1
     }
 
 
-def payload_chat_completions(model, final_content):
+def payload_chat_completions(model, system_content, user_content=""):
     return {
         "model": model,
-        "messages": [{"role": "user", "content": final_content}]
+        "messages": [
+            {"role": "user", "content": user_content},
+            {"role": "system", "content": system_content}
+        ]
     }
 
-def payload_completions(model, final_content):
-    return {
-        "model": model,
-        "prompt": final_content
-    }
 
 api_map = {
     "gpt-3.5-turbo-1106": {
         "endpoint": "https://api.openai.com/v1/chat/completions",
-        "payload": payload_chat_completions
+        "payload": payload_chat_completions_json
     },
-    "gpt-3.5-turbo-instruct": {
-        "endpoint": "https://api.openai.com/v1/completions",
-        "payload": payload_completions
+    "gpt-3.5-turbo": {
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "payload": payload_chat_completions_json
     }
 }
 
@@ -36,8 +38,10 @@ api_map_json = {
         "endpoint": "https://api.openai.com/v1/chat/completions",
         "payload": payload_chat_completions_json
     },
-    "gpt-3.5-turbo-instruct": {
-        "endpoint": "https://api.openai.com/v1/completions",
-        "payload": payload_completions
+    "gpt-3.5-turbo": {
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "payload": payload_chat_completions_json
     }
 }
+
+
