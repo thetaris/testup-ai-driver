@@ -42,13 +42,14 @@ class DomAnalyzer:
     The actions that you can take are:
         1. click (if you need to click something on the screen)
         2. enter_text (if you believe you need to write something)
-        3. wait (when the previous action changed the source code and you need the new source code)
-        4. finish (at the end to know that we are done or if all actions have been executed)
-        5. error ( the given task cannot be accomplished)
+        3. scroll (if you are instructed to scroll or scrolling is needed to complete action)
+        4. wait (when the previous action changed the source code and you need the new source code)
+        5. finish (at the end to know that we are done or if all actions have been executed)
+        6. error ( the given task cannot be accomplished)
 
      Each entry is an object of 5 fields, the fields are the following:
         1. action: can be one of: click, enter_text, wait, error, or finish.
-        2.css_selector: (only needed for click or enter-text), this is the css id of the html element(\'li\', \'button\', \'input\', \'textarea\', \'a\').
+        2.css_selector: (only needed for click or enter-text), this is the css id of the html element('li', 'button', 'input', 'textarea', 'a').
         3. text: this is optional and contains the text you want to input in case of an enter-text action. 
         4. explanation: this is why you chose this action.
         5. description: detailed description of the action
@@ -132,16 +133,18 @@ class DomAnalyzer:
         user_content += "\nYou are a browser automation assistant. Your job is to analyze the already executed actions and determine the next actions needed to complete the provided task."
 
         system_prompt = self.system_prompt
+        assistant_prompt = [self.format_action(action) for action in actions_executed]
         if actions_executed:
-            executed_actions_str = '\n'.join([f"{idx+1}.{{\"action\": \"{action['action']}\", \"css_selector\": \"{action['css_selector']}\", \"Text\": \"{action['text']}\", \"explanation\": \"{action['explanation']}\", \"description\": \"{action['description']}\"}}" for idx, action in enumerate(actions_executed)])
+            executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
             user_content += f"\n\nAlready executed actions:\n{executed_actions_str}"
 
+        logging.info(f"Assistant prompt: {assistant_prompt}")
         user_content += "\n\nAnd this is your task: "
         user_content += "\nImagine you already executed the given list of \"previous actions\", what actions remain to complete the following task:"
         user_content += f"\n- {user_prompt}"
 
         api_info = api_map_json[self.gpt_model]
-        payload = api_info['payload'](self.gpt_model, system_prompt, user_content, self.get_session_history(session_id))
+        payload = api_info['payload'](self.gpt_model, system_prompt, user_content, assistant_prompt)
         logging.info(f"sending request {payload}")
         headers = {
             "Content-Type": "application/json",
@@ -173,7 +176,6 @@ class DomAnalyzer:
                 # Parse the extracted content as JSON
                 logging.info(f"assistant_message_json_str = {assistant_message_json_str}")
                 assistant_message_json_str = assistant_message_json_str.replace("```json", "").replace("```", "").strip()
-                self.update_session_history(session_id, assistant_message_json_str)
                 assistant_message = json.loads(assistant_message_json_str)
             except json.JSONDecodeError:
                 raise Exception("Error decoding the extracted content as JSON.")
@@ -224,14 +226,5 @@ class DomAnalyzer:
         # Check if any of the positive indicators are in the content
         return any(re.search(r'\b' + indicator + r'\b', content, re.IGNORECASE) for indicator in positive_indicators)
 
-    def update_session_history(self, session_id, new_entry):
-        if session_id not in self.session_histories:
-            self.session_histories[session_id] = {'history': [], 'timestamp': time.time()}
-        self.session_histories[session_id]['history'].append(new_entry)
-        self.session_histories[session_id]['timestamp'] = time.time()
-
-    def get_session_history(self, session_id):
-        if session_id in self.session_histories:
-            return self.session_histories[session_id]['history']
-        else:
-            return []
+    def format_action(self, action):
+        return f"{{\"action\": \"{action['action']}\", \"css_selector\": \"{action['css_selector']}\", \"Text\": \"{action['text']}\", \"explanation\": \"{action['explanation']}\", \"description\": \"{action['description']}\"}}"
