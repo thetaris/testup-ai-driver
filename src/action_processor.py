@@ -1,10 +1,12 @@
 from gpt_api_spec import api_map, api_map_json
 from md_converter import convert_to_md
+from cachetools import TTLCache
 import requests
 import json
 import os
 import logging
 import re
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -55,6 +57,7 @@ class DomAnalyzer:
     session_histories = {}
 
     def __init__(self):
+        self.session_histories = TTLCache(maxsize=1000, ttl=3600)
         if self.gpt_model not in api_map:
             raise ValueError(f"Model '{self.gpt_model}' is not supported")
 
@@ -120,9 +123,6 @@ class DomAnalyzer:
 
     def get_actions(self, session_id, user_prompt, html_doc, actions_executed):
 
-        if session_id not in self.session_histories:
-            self.session_histories[session_id] = []
-
         logging.info(f"System input: {self.gpt_prompt}")
         markdown_content = convert_to_md(html_doc)
 
@@ -141,7 +141,7 @@ class DomAnalyzer:
         user_content += f"\n- {user_prompt}"
 
         api_info = api_map_json[self.gpt_model]
-        payload = api_info['payload'](self.gpt_model, system_prompt, user_content, self.session_histories[session_id])
+        payload = api_info['payload'](self.gpt_model, system_prompt, user_content, self.get_session_history(session_id))
         logging.info(f"sending request {payload}")
         headers = {
             "Content-Type": "application/json",
@@ -173,7 +173,7 @@ class DomAnalyzer:
                 # Parse the extracted content as JSON
                 logging.info(f"assistant_message_json_str = {assistant_message_json_str}")
                 assistant_message_json_str = assistant_message_json_str.replace("```json", "").replace("```", "").strip()
-                self.session_histories[session_id].append(assistant_message_json_str)
+                self.update_session_history(session_id, assistant_message_json_str)
                 assistant_message = json.loads(assistant_message_json_str)
             except json.JSONDecodeError:
                 raise Exception("Error decoding the extracted content as JSON.")
@@ -224,3 +224,14 @@ class DomAnalyzer:
         # Check if any of the positive indicators are in the content
         return any(re.search(r'\b' + indicator + r'\b', content, re.IGNORECASE) for indicator in positive_indicators)
 
+    def update_session_history(self, session_id, new_entry):
+        if session_id not in self.session_histories:
+            self.session_histories[session_id] = {'history': [], 'timestamp': time.time()}
+        self.session_histories[session_id]['history'].append(new_entry)
+        self.session_histories[session_id]['timestamp'] = time.time()
+
+    def get_session_history(self, session_id):
+        if session_id in self.session_histories:
+            return self.session_histories[session_id]['history']
+        else:
+            return []
