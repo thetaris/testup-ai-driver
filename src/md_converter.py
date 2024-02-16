@@ -79,4 +79,6 @@ def convert_to_md(html_doc):
 
     markdown = re.sub('\s+', ' ', markdown)
 
+    logging.info(f"markdown: {markdown}")
+
     return markdown
