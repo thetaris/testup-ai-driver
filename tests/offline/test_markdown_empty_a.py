@@ -5,14 +5,15 @@ from pathlib import Path
 import logging
 
 # Configure logging
+
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def test_convert_md_includes_all_aria_labels_empty_a_with_aria():
+def test_convert_md_includes_all_aria_labels_empty_a_with_aria(data_file_path):
     logging.info("Starting test: test_convert_md_includes_all_aria_labels_empty_a_with_aria")
 
     # Locate and read the HTML file
-    file_path = Path(__file__).parent.parent / 'data' / 'offline' / 'empty_links_with_aria.html'
+    file_path = data_file_path / 'empty_links_with_aria.html'
     logging.debug(f"Reading HTML file from: {file_path}")
     with open(file_path, 'r', encoding='utf-8') as file:
         html_content = file.read()
@@ -34,11 +35,11 @@ def test_convert_md_includes_all_aria_labels_empty_a_with_aria():
     logging.info("Test completed successfully")
 
 
-def test_convert_md_includes_all_ids_empty_a_with_aria():
+def test_convert_md_includes_all_ids_empty_a_with_aria(data_file_path):
     logging.info("Starting test: test_convert_md_includes_all_ids_empty_a_with_aria")
 
     # Locate and read the HTML file
-    file_path = Path(__file__).parent.parent / 'data' / 'offline' / 'li_a_aria_extended.html'
+    file_path = data_file_path / 'li_a_aria_extended.html'
     logging.debug(f"Reading HTML file from: {file_path}")
     with open(file_path, 'r', encoding='utf-8') as file:
         html_content = file.read()

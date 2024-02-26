@@ -1,6 +1,7 @@
 import pytest
 import logging
 from pathlib import Path
+from test_utils import assert_chatGPT_response
 from action_processor import DomAnalyzer  
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -16,19 +17,21 @@ class Testbogner_damen_product_page:
         logging.info('Test teardown initiated')
         # Teardown code here, if any
 
-    def test_case_1(self, setup):
-        logging.info('Starting test case 1: add the product to the cart')
+    def test_case_11(self, setup, data_file_path):
+        logging.info('Starting test case 11: add the product to the cart')
         session_id = 1234
         user_prompt = "add the product to the cart"
         # Locate and read the HTML file
-        file_path = Path(__file__).parent.parent/ 'data'/ 'online'/ 'bogner_damen_product_page.html'
+        file_path = data_file_path / 'bogner_damen_product_page.html'
         logging.debug(f"Reading HTML file from: {file_path}")
         with open(file_path, 'r', encoding='utf-8') as file:
             html_content = file.read()
         actions_executed = """"""
-        expected_response = "#autoidtestup968"
+        expected_action = "click"
+        expected_css_selector = "#autoidtestup968"
+        expected_text = "Product added to cart"
         logging.debug(f"Calling get_actions with session_id={session_id}, user_prompt='{user_prompt}', actions_executed={actions_executed}, html_content_length={len(html_content)} ")
         actual_response = self.instance.get_actions(session_id, user_prompt, html_content, actions_executed)
-        assert actual_response == expected_response, f"Expected: #autoidtestup968, but got: {actual_response}"
-        logging.info('Test case 1 completed successfully')
+        assert_chatGPT_response(actual_response, "click", "#autoidtestup968", "Product added to cart")
+        logging.info('Test case 11 completed successfully')
 

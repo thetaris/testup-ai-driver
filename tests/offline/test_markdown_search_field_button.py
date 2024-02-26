@@ -1,18 +1,17 @@
 import pytest
-import re
+
 from md_converter import convert_to_md
-from pathlib import Path
 import logging
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def test_convert_md_includes_does_not_show_hidden_elements():
+def test_convert_md_includes_does_not_show_hidden_elements(data_file_path):
     logging.info("Starting test: test_convert_md_includes_does_not_show_hidden_elements")
 
     # Locate and read the HTML file
-    file_path = Path(__file__).parent.parent / 'data' / 'offline' / 'search_field.html'
+    file_path = data_file_path / 'search_field.html'
     logging.debug(f"Reading HTML file from: {file_path}")
     with open(file_path, 'r', encoding='utf-8') as file:
         html_content = file.read()
@@ -28,15 +27,14 @@ def test_convert_md_includes_does_not_show_hidden_elements():
     logging.info("Test completed successfully: test_convert_md_includes_does_not_show_hidden_elements")
 
 
-def test_convert_to_md_includes_all_ids_search_field():
+def test_convert_to_md_includes_all_ids_search_field(data_file_path):
     logging.info("Starting test: test_convert_to_md_includes_all_ids_search_field")
 
     # Locate and read the HTML file
-    file_path = Path(__file__).parent.parent / 'data' / 'offline' / 'search_field.html'
+    file_path = data_file_path / 'search_field.html'
     logging.debug(f"Reading HTML file from: {file_path}")
     with open(file_path, 'r', encoding='utf-8') as file:
         html_content = file.read()
-
 
     # Convert HTML to Markdown
     logging.info("Converting HTML to Markdown")
@@ -46,9 +44,14 @@ def test_convert_to_md_includes_all_ids_search_field():
     aria_labels_in_input = ["woocommerce-product-search-field-0", "autoidtestup4"]
 
     for aria_label in aria_labels_in_input:
-        assert aria_label in md_output, logging.error(f"aria-label '{aria_label}' was not found in the Markdown output")
+        try:
+            assert aria_label in md_output, f"aria-label '{aria_label}' was not found in the Markdown output"
+        except AssertionError as e:
+            logging.error(e)
+            raise
         logging.info(f"Verified ID '{aria_label}' is present in the Markdown output")
 
     logging.info("Test completed successfully")
+
 
 

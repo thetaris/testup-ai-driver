@@ -44,7 +44,7 @@ def convert_to_md(html_doc):
     html_doc = re.sub(r'<source[^>]*>', '', html_doc, flags=re.DOTALL)
     html_doc = re.sub(r'<svg.*?>.*?</svg>', '', html_doc, flags=re.DOTALL)
 
-    logging.info(f"html_doc: {html_doc}")
+    #logging.info(f"html_doc: {html_doc}")
 
     logging.info('------------------------------------------------')
     logging.info('------------------------------------------------')

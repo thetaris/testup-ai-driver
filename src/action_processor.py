@@ -13,8 +13,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 class DomAnalyzer:
-    gpt_api_key = os.getenv("API_KEY")
-    gpt_model = os.getenv("GPT_MODEL")
+    gpt_api_key = os.getenv("OPENAI_API_KEY")
+    gpt_model = os.getenv("GPT_MODEL", "gpt-3.5-turbo-1106")
     gpt_prompt = os.getenv("GPT_PROMPT", """
      You are a browser automation assistant. Your job is to analyze the already executed actions and determine the next actions needed to complete the provided task.
     The actions that you can take are:
@@ -30,7 +30,7 @@ class DomAnalyzer:
     
     Each entry is an object of 5 fields, the fields are the following:
     1. action: can be one of: click, enter_text, wait, error, or finish.
-    2.css_selector: (only needed for click or enter-text), this is the css id of the html element(\'li\', \'button\', \'input\', \'textarea\', \'a\').
+    2. css_selector: (only needed for click or enter-text), this is the css id of the html element(\'li\', \'button\', \'input\', \'textarea\', \'a\'). Always use the ID of the element as css selector!
     3. text: this is optional and contains the text you want to input in case of an enter-text action. 
     4. explanation: this is why you chose this action.
     5. description: detailed description of the action
@@ -38,24 +38,8 @@ class DomAnalyzer:
     \n
     """)
     gpt_check_prompt = os.getenv("GPT_CHECK_PROMPT")
-    system_rules = """
-    The actions that you can take are:
-        1. click (if you need to click something on the screen)
-        2. enter_text (if you believe you need to write something)
-        3. scroll (if you are instructed to scroll or scrolling is needed to complete action)
-        4. finish (at the end to know that we are done or if all actions have been executed)
-        5. error ( the given task cannot be accomplished)
-
-     Each entry is an object of 5 fields, the fields are the following:
-        1. action: can be one of: click, enter_text, wait, error, or finish.
-        2.css_selector: (only needed for click or enter-text), this is the css id of the html element('li', 'button', 'input', 'textarea', 'a').
-        3. text: this is optional and contains the text you want to input in case of an enter-text action. 
-        4. explanation: this is why you chose this action.
-        5. description: detailed description of the action
-        The output format should be {"steps":[{ "action":..,"css_selector":...., "text":..., "explanation":..., "description":...}]}
-    """
     session_histories = {}
-    system_prompt = """
+    system_input = """
     You are a testautomation system. Your job is to analyze the already executed actions and determine the next actions needed to complete the provided task.
     
     The actions that you can take are:
@@ -74,36 +58,48 @@ class DomAnalyzer:
         The output format should be {"steps":[{ "action":..,"css_selector":...., "text":..., "explanation":..., "description":...}]}
     """
 
+    user_input = """\n\nAlready executed actions:\n @@@last_played_actions@@@ \n 
+    \n\nAnd this is your task: @@@task@@@
+    \nImagine you already executed the given list of \"previous actions\", what actions remain to complete the following task:
+    \n - @@@task@@@ \n
+
+    \n Here is the Markdown: @@@markdown@@@
+    """
+
+
     def __init__(self):
         self.session_histories = TTLCache(maxsize=1000, ttl=3600)
         if self.gpt_model not in api_map:
             raise ValueError(f"Model '{self.gpt_model}' is not supported")
 
 
-    def get_actions(self, session_id, user_prompt, html_doc, actions_executed):
+    def get_actions(self, session_id, user_prompt, html_doc, actions_executed,  user_input = user_input, system_input = system_input):
 
         markdown_content = convert_to_md(html_doc)
 
         # removing unneeded spaces
         logging.info(f"Markdown: {markdown_content}")
 
-        user_content = ""
+
+
+        if actions_executed:
+            executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
+            user_input = user_input.replace("@@@last_played_actions@@@", executed_actions_str)
+            system_input = system_input.replace("@@@last_played_actions@@@", executed_actions_str)
+
+        user_input = user_input.replace("@@@markdown@@@", markdown_content)
+        system_input = system_input.replace("@@@markdown@@@", markdown_content)
+
+        user_input = user_input.replace("@@@task@@@", user_prompt)
+        system_input = system_input.replace("@@@task@@@", user_prompt)
+
         assistant_prompt = []
         assistant_prompt.extend(action for action in actions_executed)
         logging.info(f"Assistant prompt: {assistant_prompt}")
-        if actions_executed:
-            executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
-            user_content += f"\n\nAlready executed actions:\n{executed_actions_str}"
 
-
-        user_content += "\n\nAnd this is your task: "
-        user_content += "\nImagine you already executed the given list of \"previous actions\", what actions remain to complete the following task:"
-        user_content += f"\n- {user_prompt}\n"
-
-        user_content += f"\nHere is the Markdown: {markdown_content}."
 
         api_info = api_map_json[self.gpt_model]
-        payload = api_info['payload'](self.gpt_model, self.system_prompt, user_content, assistant_prompt)
+        payload = api_info['payload'](self.gpt_model, system_input, user_input, assistant_prompt)
         logging.info(f"sending request {payload}")
         headers = {
             "Content-Type": "application/json",
