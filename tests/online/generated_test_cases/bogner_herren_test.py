@@ -2,11 +2,9 @@ import pytest
 import logging
 from pathlib import Path
 from test_utils import assert_chatGPT_response
-from action_processor import DomAnalyzer  
+from action_processor import DomAnalyzer
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-# Test cases for https://www.bogner.com/de-de/c/damen/specials/diesen-monat/570394/?prefn1=productLine&prefv1=bogner
-class Testbogner_damen_neuheiten:
+class Testbogner_herren:
 
     @pytest.fixture
     def setup(self):
@@ -17,21 +15,21 @@ class Testbogner_damen_neuheiten:
         logging.info('Test teardown initiated')
         # Teardown code here, if any
 
-    def test_case_accept_cookies_first(self, setup, data_file_path):
-        logging.info('Starting test case 10: buy any product')
+    def test_case_1(self, setup, data_file_path):
+        logging.info('Starting test case 1: go to the women section on URL: https://www.bogner.com/de-de/c/herren/453350/')
         session_id = 1234
-        user_prompt = "buy any product"
+        user_prompt = """go to the women section"""
         # Locate and read the HTML file
-        file_path = data_file_path / 'bogner_damen_neuheiten.html'
+        file_path = data_file_path / 'bogner_herren.html'
         logging.debug(f"Reading HTML file from: {file_path}")
         with open(file_path, 'r', encoding='utf-8') as file:
             html_content = file.read()
         actions_executed = """"""
-        expected_action = "click"
-        expected_css_selector = "#onetrust-accept-btn-handler"
-        expected_text = ""
+        expected_action = """click"""
+        expected_css_selector = """#autoidtestup4"""
+        expected_text = """Navigated to women section"""
         logging.debug(f"Calling get_actions with session_id={session_id}, user_prompt='{user_prompt}', actions_executed={actions_executed}, html_content_length={len(html_content)} ")
         actual_response = self.instance.get_actions(session_id, user_prompt, html_content, actions_executed)
-        assert_chatGPT_response(actual_response, "click", "#onetrust-accept-btn-handler", "")
-        logging.info('Test case 10 completed successfully')
+        assert_chatGPT_response(actual_response, "click", "#autoidtestup4", "Navigated to women section")
+        logging.info('Test case 1 completed successfully')
 

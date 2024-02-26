@@ -60,6 +60,16 @@ class DomAnalyzer:
 
     user_input = """\n\nAlready executed actions:\n @@@last_played_actions@@@ \n 
     \n\nAnd this is your task: @@@task@@@
+    \n\nYou can use the information given by this set of variables to complete your task:
+    \n - First_name = Barbara
+    \n - Last_name = Doe
+    \n - Country = Germany 
+    \n - Street_address = Fake St. 13 
+    \n - ZIP = 21614 
+    \n - City = Buxtehude 
+    \n - Phone = 089123456789 
+    \n - Email = address demo@testup.io 
+    \n  
     \nImagine you already executed the given list of \"previous actions\", what actions remain to complete the following task:
     \n - @@@task@@@ \n
 
