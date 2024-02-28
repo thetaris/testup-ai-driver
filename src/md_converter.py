@@ -1,4 +1,4 @@
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 from markdownify import markdownify as md
 import re
 import sys
@@ -9,40 +9,40 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 def convert_to_md(html_doc):
-    html_doc = re.sub('<script[^>]*>[^<]*</script>', '', html_doc)
-
-    html_doc = re.sub('<link .*?/>', '', html_doc)
-
-    html_doc = re.sub('<img[^>]*>', '', html_doc)
-
-    html_doc = re.sub('<!--.*?-->', '', html_doc)
-
-    html_doc = re.sub('data-link-behaviour="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub('data-modalopenparam="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub('data-loadedonopen="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub('data-tabber-content="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub('style="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub('role="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub('height="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub('color="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub('width="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub('x="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub('y="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub('href="[^"]*"', '', html_doc, flags=re.DOTALL)
-
-    html_doc = re.sub(r'<source[^>]*>', '', html_doc, flags=re.DOTALL)
-    html_doc = re.sub(r'<svg.*?>.*?</svg>', '', html_doc, flags=re.DOTALL)
+    # html_doc = re.sub('<script[^>]*>[^<]*</script>', '', html_doc)
+    #
+    # html_doc = re.sub('<link .*?/>', '', html_doc)
+    #
+    # html_doc = re.sub('<img[^>]*>', '', html_doc)
+    #
+    # html_doc = re.sub('<!--.*?-->', '', html_doc)
+    #
+    # html_doc = re.sub('data-link-behaviour="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub('data-modalopenparam="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub('data-loadedonopen="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub('data-tabber-content="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub('style="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub('role="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub('height="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub('color="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub('width="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub('x="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub('y="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub('href="[^"]*"', '', html_doc, flags=re.DOTALL)
+    #
+    # html_doc = re.sub(r'<source[^>]*>', '', html_doc, flags=re.DOTALL)
+    # html_doc = re.sub(r'<svg.*?>.*?</svg>', '', html_doc, flags=re.DOTALL)
 
     #logging.info(f"html_doc: {html_doc}")
 
@@ -54,6 +54,13 @@ def convert_to_md(html_doc):
 
     soup = BeautifulSoup(html_doc, 'html.parser')
 
+    for script in soup.find_all('script'):
+        script.decompose()
+
+    # Remove all comments, which includes CDATA
+    for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
+        comment.extract()
+
     for tag in soup.find_all(['li', 'button', 'input', 'textarea', 'a'], id=True):
         # Exclude hidden elements
         if tag.get('hidden') == 'true':
@@ -61,8 +68,10 @@ def convert_to_md(html_doc):
         # Initialize an empty list to hold the desired attributes
         desired_attributes = []
 
+        exclude_attrs = {'class', 'style', 'href', 'value', 'target'}
+
         for attr, value in tag.attrs.items():
-            if attr != 'class':
+            if attr not in exclude_attrs:
                 desired_attributes.append(f'{attr}="{value}"')
 
         # Join the desired attributes into a single string
@@ -77,7 +86,7 @@ def convert_to_md(html_doc):
     # Remove '.postfix' from tag names in the Markdown content
     markdown = re.sub(r'(\w+)\.postfix', r'\1', markdown)
 
-    markdown = re.sub('\s+', ' ', markdown)
+    markdown = re.sub('\\s+', ' ', markdown)
 
     logging.info(f"markdown: {markdown}")
 
