@@ -39,7 +39,7 @@ class DomAnalyzer:
     """)
     gpt_check_prompt = os.getenv("GPT_CHECK_PROMPT")
     session_histories = {}
-    system_input = """
+    system_input_default = """
     You are a testautomation system. Your job is to analyze the already executed actions and determine the next actions needed to complete the provided task.
     
     The actions that you can take are:
@@ -58,10 +58,11 @@ class DomAnalyzer:
         The output format should be {"steps":[{ "action":..,"css_selector":...., "text":..., "explanation":..., "description":...}]}
     """
 
-    user_input = """\n\nAlready executed actions:\n @@@last_played_actions@@@ \n 
+    user_input_default = """\n\nAlready executed actions:\n @@@last_played_actions@@@ \n 
     \n\nAnd this is your task: @@@task@@@
-    \n  
-    \nImagine you already executed the given list of \"previous actions\", what actions remain to complete the following task:
+    \n\nYou can use the information given by this set of variables to complete your task: 
+    \n @@@variables@@@
+    \n\nImagine you already executed the given list of \"previous actions\", what actions remain to complete the following task, (remember to just return "finish" if you think you are done with your task):
     \n - @@@task@@@ \n
 
     \n Here is the Markdown: @@@markdown@@@
@@ -73,7 +74,7 @@ class DomAnalyzer:
         if self.gpt_model not in api_map:
             raise ValueError(f"Model '{self.gpt_model}' is not supported")
 
-    def get_actions(self, session_id, user_prompt, html_doc, actions_executed,  user_input = user_input, system_input = system_input):
+    def get_actions(self, session_id, user_prompt, html_doc, actions_executed,  user_input=user_input_default, system_input=system_input_default, variables_string="- no variables available -"):
 
         markdown_content = convert_to_md(html_doc)
 
@@ -90,6 +91,9 @@ class DomAnalyzer:
 
         user_input = user_input.replace("@@@task@@@", user_prompt)
         system_input = system_input.replace("@@@task@@@", user_prompt)
+
+        user_input = user_input.replace("@@@variables@@@", variables_string)
+        system_input = system_input.replace("@@@variables@@@", variables_string)
 
         assistant_prompt = []
         assistant_prompt.extend(action for action in actions_executed)
@@ -157,3 +161,16 @@ class DomAnalyzer:
         except json.JSONDecodeError:
             print("Error decoding JSON")
             return []
+
+    def variableMap_to_string(self, input_map):
+
+        if not input_map:
+            return "- no variables available -"
+
+        # Initialize an empty string
+        output_string = "\n\nYou can use the information given by this set of variables to complete your task:\n"
+        # Iterate through the map to format the string
+        for index, (key, value) in enumerate(input_map.items(), start=1):
+            output_string += f"-{key} = {value}\n"
+        # Remove the last newline character for clean output
+        return output_string.rstrip()

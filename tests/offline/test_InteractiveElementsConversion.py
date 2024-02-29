@@ -22,6 +22,12 @@ class TestInteractiveElementsConversion:
         result = convert_to_md(html)
         assert result == expected_md, f"Expected: {expected_md}, Got: {result}"
 
+    def test_button_with_id_with_underscore(self, setup):
+        html = '<body><button id="testupautoid_1234">Click me</button></body>'
+        expected_md = """<button id="testupautoid_1234">Click me</button>"""
+        result = convert_to_md(html)
+        assert result == expected_md, f"Expected: {expected_md}, Got: {result}"
+
     def test_input_with_id_conversion(self, setup):
         html = '<body><input type="text" id="testupautoid1234"></body>'
         #expected_md = 'Input: <!-- id: testupautoid1234 -->'

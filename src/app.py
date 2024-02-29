@@ -17,7 +17,9 @@ def process_prompt(session_id):
     html_doc = data.get('html_doc')
     user_prompt = data.get('user_prompt')
     actions_executed = data.get("actions_executed")
-    analysis_result = dom_analyzer.get_actions(session_id, user_prompt, html_doc, actions_executed)
+    variableMap = data.get("variables_map")
+    variableMapStr = dom_analyzer.variableMap_to_string(variableMap)
+    analysis_result = dom_analyzer.get_actions(session_id, user_prompt, html_doc, actions_executed, variableMapStr )
     print(analysis_result)
 
     return jsonify(analysis_result)

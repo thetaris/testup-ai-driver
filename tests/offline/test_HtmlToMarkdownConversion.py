@@ -18,8 +18,8 @@ class TestHtmlToMarkdownConversion:
 
     def test_link_conversion(self):
         html = '<body><a href="https://example.com">Example</a></body>'
-        #expected_md = "[Example](https://example.com)"
-        expected_md = "Example"
+        expected_md = "[Example](https://example.com)"
+        #expected_md = "Example"
         result = convert_to_md(html)
         assert convert_to_md(html) == expected_md, f"Expected: {expected_md}, Got: {result}"
 
@@ -42,5 +42,4 @@ class TestHtmlToMarkdownConversion:
         expected_md = "![Alt text](image.jpg)"
         result = convert_to_md(html)
         assert convert_to_md(html) == expected_md, f"Expected: {expected_md}, Got: {result}"
-
 
