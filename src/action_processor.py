@@ -60,15 +60,6 @@ class DomAnalyzer:
 
     user_input = """\n\nAlready executed actions:\n @@@last_played_actions@@@ \n 
     \n\nAnd this is your task: @@@task@@@
-    \n\nYou can use the information given by this set of variables to complete your task:
-    \n - First_name = Barbara
-    \n - Last_name = Doe
-    \n - Country = Germany 
-    \n - Street_address = Fake St. 13 
-    \n - ZIP = 21614 
-    \n - City = Buxtehude 
-    \n - Phone = 089123456789 
-    \n - Email = address demo@testup.io 
     \n  
     \nImagine you already executed the given list of \"previous actions\", what actions remain to complete the following task:
     \n - @@@task@@@ \n
@@ -82,7 +73,6 @@ class DomAnalyzer:
         if self.gpt_model not in api_map:
             raise ValueError(f"Model '{self.gpt_model}' is not supported")
 
-
     def get_actions(self, session_id, user_prompt, html_doc, actions_executed,  user_input = user_input, system_input = system_input):
 
         markdown_content = convert_to_md(html_doc)
@@ -91,11 +81,9 @@ class DomAnalyzer:
         logging.info(f"Markdown: {markdown_content}")
 
 
-
-        if actions_executed:
-            executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
-            user_input = user_input.replace("@@@last_played_actions@@@", executed_actions_str)
-            system_input = system_input.replace("@@@last_played_actions@@@", executed_actions_str)
+        executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
+        user_input = user_input.replace("@@@last_played_actions@@@", executed_actions_str)
+        system_input = system_input.replace("@@@last_played_actions@@@", executed_actions_str)
 
         user_input = user_input.replace("@@@markdown@@@", markdown_content)
         system_input = system_input.replace("@@@markdown@@@", markdown_content)
@@ -106,7 +94,6 @@ class DomAnalyzer:
         assistant_prompt = []
         assistant_prompt.extend(action for action in actions_executed)
         logging.info(f"Assistant prompt: {assistant_prompt}")
-
 
         api_info = api_map_json[self.gpt_model]
         payload = api_info['payload'](self.gpt_model, system_input, user_input, assistant_prompt)
