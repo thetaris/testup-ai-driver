@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prompt-service
+  namespace: stage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prompt-service
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: prompt-service
+    spec:
+      containers:
+        - env:
+            - name: OPENAI_API_KEY
+              value: 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
+            - name: GPT_MODEL
+              value: gpt-3.5-turbo-1106
+          image: 757835444551.dkr.ecr.eu-central-1.amazonaws.com/base_default_testup_prompt_service:3.0.0
+          imagePullPolicy: IfNotPresent
+          name: prompt-service
+          ports:
+            - containerPort: 5000
+              protocol: TCP
+          resources: {}
