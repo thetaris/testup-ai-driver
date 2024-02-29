@@ -9,42 +9,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 def convert_to_md(html_doc):
-    # html_doc = re.sub('<script[^>]*>[^<]*</script>', '', html_doc)
-    #
-    # html_doc = re.sub('<link .*?/>', '', html_doc)
-    #
-    # html_doc = re.sub('<img[^>]*>', '', html_doc)
-    #
-    # html_doc = re.sub('<!--.*?-->', '', html_doc)
-    #
-    # html_doc = re.sub('data-link-behaviour="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub('data-modalopenparam="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub('data-loadedonopen="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub('data-tabber-content="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub('style="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub('role="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub('height="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub('color="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub('width="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub('x="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub('y="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub('href="[^"]*"', '', html_doc, flags=re.DOTALL)
-    #
-    # html_doc = re.sub(r'<source[^>]*>', '', html_doc, flags=re.DOTALL)
-    # html_doc = re.sub(r'<svg.*?>.*?</svg>', '', html_doc, flags=re.DOTALL)
-
-    #logging.info(f"html_doc: {html_doc}")
 
     logging.info('------------------------------------------------')
     logging.info('------------------------------------------------')
@@ -82,11 +46,9 @@ def convert_to_md(html_doc):
 
     # Convert the modified HTML to Markdown
     markdown = md(str(soup), strip=['span'])
-
-    # Remove '.postfix' from tag names in the Markdown content
     markdown = re.sub(r'(\w+)\.postfix', r'\1', markdown)
-
     markdown = re.sub('\\s+', ' ', markdown)
+    markdown = markdown.replace('\\_', '_')
 
     logging.info(f"markdown: {markdown}")
 
