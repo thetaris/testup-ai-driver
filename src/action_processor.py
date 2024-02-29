@@ -74,7 +74,7 @@ class DomAnalyzer:
         if self.gpt_model not in api_map:
             raise ValueError(f"Model '{self.gpt_model}' is not supported")
 
-    def get_actions(self, session_id, user_prompt, html_doc, actions_executed,  user_input=user_input_default, system_input=system_input_default, variables_string="- no variables available -"):
+    def get_actions(self, session_id, user_prompt, html_doc, actions_executed, variables_string="- no variables available -", user_input=user_input_default, system_input=system_input_default):
 
         markdown_content = convert_to_md(html_doc)
 
