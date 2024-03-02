@@ -31,6 +31,6 @@ class Test_action_processor:
                 }
             ]
         }
-        actual_response = DomAnalyzer().parse_output(output_str)
+        actual_response = DomAnalyzer().extract_steps(output_str)
 
         assert actual_response == expected_response, "The actual response does not match the expected response."

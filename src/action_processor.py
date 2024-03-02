@@ -141,7 +141,6 @@ class DomAnalyzer:
 
             logging.info(f"Tokens: {total_tokens}")
             # Store in new JSON object
-            assistant_message = self.parse_output(assistant_message)
             logging.info(f"Returning: {assistant_message}")
             return assistant_message
         else:
@@ -151,16 +150,26 @@ class DomAnalyzer:
         return f"{{\"action\": \"{action['action']}\", \"css_selector\": \"{action['css_selector']}\", \"Text\": \"{action['text']}\", \"explanation\": \"{action['explanation']}\", \"description\": \"{action['description']}\"}}"
 
     def extract_steps(self, json_str):
-        # Attempt to find the JSON start, assuming it might be embedded in a larger string
-        json_start = json_str.find('{"steps"')
-        if json_start != -1:
-            json_str = json_str[json_start:]
         try:
             data = json.loads(json_str)
-            return data
+            if 'steps' in data:
+                return data
         except json.JSONDecodeError:
-            print("Error decoding JSON")
-            return []
+            pass
+        pattern = r'(\{.*"steps".*\})'
+        matches = re.findall(pattern, json_str, re.DOTALL)
+
+        for match in matches:
+            try:
+                potential_json = match
+                parsed_json = json.loads(potential_json)
+                if 'steps' in parsed_json:
+                    return parsed_json
+            except json.JSONDecodeError as e:
+                continue
+
+        logging.info("Unable to parse JSON structure from the message")
+        return {}
 
     def variableMap_to_string(self, input_map):
 
@@ -174,26 +183,3 @@ class DomAnalyzer:
             output_string += f"-{key} = {value}\n"
         # Remove the last newline character for clean output
         return output_string.rstrip()
-
-    def parse_output(self, assistant_message):
-        # First, try to parse the entire message as JSON
-        try:
-            data = json.loads(assistant_message)
-            if 'steps' in data:
-                return data
-        except json.JSONDecodeError:
-            pass
-        pattern = r'(\{.*"steps".*\})'
-        matches = re.findall(pattern, assistant_message, re.DOTALL)
-
-        for match in matches:
-            try:
-                potential_json = match
-                parsed_json = json.loads(potential_json)
-                if 'steps' in parsed_json:
-                    return parsed_json
-            except json.JSONDecodeError as e:
-                continue
-
-        logging.info("Unable to parse JSON structure from the message")
-        return None
