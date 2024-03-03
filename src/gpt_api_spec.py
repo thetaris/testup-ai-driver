@@ -1,11 +1,11 @@
 
 
-def payload_chat_completions_json(model, system_content, user_content, history_content=None):
-    # Initialize the messages list with the history content
-    messages = [{"role": "assistant", "content": f"{history_content}"}, {"role": "user", "content": user_content},
-                {"role": "system", "content": system_content}]
+def payload_chat_completions_json(model, contents):
+    messages = []
 
-    # Append the current user and system messages to the messages list
+    if contents:
+        for content in contents:
+            messages.append({"role": content['role'], "content": content['message']})
 
     return {
         "model": model,

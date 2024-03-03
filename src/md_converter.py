@@ -25,6 +25,11 @@ def convert_to_md(html_doc):
     for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
         comment.extract()
 
+    for li in soup.find_all('li'):
+        a = li.find('a')
+        if a:
+            li.replace_with(a)
+
     for tag in soup.find_all(['li', 'button', 'input', 'textarea', 'a'], id=True):
         # Exclude hidden elements
         if tag.get('hidden') == 'true':

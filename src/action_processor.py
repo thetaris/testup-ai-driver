@@ -59,20 +59,16 @@ class DomAnalyzer:
     """
 
     user_input_default = """
-    \n\n@@@followup@@@ \n
-    \n\nAlready executed actions:\n @@@last_played_actions@@@ \n 
     \n\nAnd this is your task: @@@task@@@
     \n\nYou can use the information given by this set of variables to complete your task: 
     \n @@@variables@@@
     \n\nImagine you already executed the given list of \"previous actions\", what actions remain to complete the following task, (remember to just return "finish" if you think you are done with your task):
-    \n - @@@task@@@ \n
-
     \n Here is the Markdown: @@@markdown@@@
     """
 
-
-    def __init__(self):
-        self.session_histories = TTLCache(maxsize=1000, ttl=3600)
+    def __init__(self, cache_ttl=3600, cache_maxsize=1000):
+        self.cache = TTLCache(maxsize=1000, ttl=3600)
+        self.md_cache = TTLCache(maxsize=1000, ttl=3600)
         if self.gpt_model not in api_map:
             raise ValueError(f"Model '{self.gpt_model}' is not supported")
 
@@ -80,13 +76,7 @@ class DomAnalyzer:
 
         markdown_content = convert_to_md(html_doc)
 
-        # removing unneeded spaces
         logging.info(f"Markdown: {markdown_content}")
-
-
-        executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
-        user_input = user_input.replace("@@@last_played_actions@@@", executed_actions_str)
-        system_input = system_input.replace("@@@last_played_actions@@@", executed_actions_str)
 
         user_input = user_input.replace("@@@markdown@@@", markdown_content)
         system_input = system_input.replace("@@@markdown@@@", markdown_content)
@@ -97,27 +87,122 @@ class DomAnalyzer:
         user_input = user_input.replace("@@@variables@@@", variables_string)
         system_input = system_input.replace("@@@variables@@@", variables_string)
 
-        followup = self.resolve_followup(duplicate, valid, last_action)
-        user_input = user_input.replace("@@@followup@@@", followup)
-        system_input = system_input.replace("@@@followup@@@", followup)
+        max_retries = 3
+        attempts = 0
 
-        assistant_prompt = []
-        assistant_prompt.extend(action for action in actions_executed)
-        if last_action is not None and (valid == False or duplicate == True):  # Check if last_action exists
-            assistant_prompt.append(last_action)
-        logging.info(f"Assistant prompt: {assistant_prompt}")
+        while attempts < max_retries:
+            if session_id not in self.cache:
+                system_content = {'role': 'system', 'message': system_input}
+                user_content = {'role': 'user', 'message': user_input}
+                response = self.call_model([system_content, user_content])
+                self.cache[session_id] = [system_content, user_content]
+                self.md_cache[session_id] = markdown_content
+                extracted_response = self.extract_response(response)
 
+                if not extracted_response or extracted_response == {}:  # Check if the response is empty
+                    attempts += 1
+                    last_action = response
+                    valid = False
+                    continue  # Retry the loop
+                return extracted_response
+            else:
+                executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
+                follow_up = self.resolve_follow_up(duplicate, valid, self.format_action(last_action), executed_actions_str)
+                if markdown_content == self.md_cache[session_id]:
+                    follow_up_content = {'role': 'user', 'message': follow_up}
+                else:
+                    follow_up_content = {'role': 'user', 'message': f"Here is the new markdown: {markdown_content}\n\n{follow_up}"}
+                    self.md_cache[session_id] = markdown_content
+
+                assistant_content = {'role': 'assistant', 'message': self.format_action(last_action)}
+                # add assistant_content, follow_up_content to the cache
+                self.cache[session_id].append(assistant_content)
+                self.cache[session_id].append(follow_up_content)
+                model_input = [*self.cache[session_id], assistant_content, follow_up_content]
+                response = self.call_model(model_input)
+                extracted_response = self.extract_response(response)
+                if not extracted_response or extracted_response == {}:  # Check if the response is empty
+                    attempts += 1
+                    last_action = response
+                    valid = False
+                    continue  # Retry the loop
+
+                return extracted_response
+
+
+
+
+    def call_model(self, contents):
         api_info = api_map_json[self.gpt_model]
-        payload = api_info['payload'](self.gpt_model, system_input, user_input, assistant_prompt)
+        payload = api_info['payload'](self.gpt_model, contents)
         logging.info(f"sending request {payload}")
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.gpt_api_key}"
         }
-
         # Send POST request to OpenAI API
         response = requests.post(api_info['endpoint'], headers=headers, json=payload)
+        return response
 
+    def format_action(self, action):
+        if action is None:
+            return ""
+
+        if isinstance(action, str):
+            return action
+
+        if not isinstance(action, dict):
+            return action
+
+        return f"{{\"action\": \"{action['action']}\", \"css_selector\": \"{action['css_selector']}\", \"Text\": \"{action['text']}\", \"explanation\": \"{action['explanation']}\", \"description\": \"{action['description']}\"}}"
+
+    def extract_steps(self, json_str):
+        try:
+            data = json.loads(json_str)
+            if 'steps' in data:
+                return data
+        except json.JSONDecodeError:
+            pass
+        pattern = r'(\{.*"steps".*\})'
+        matches = re.findall(pattern, json_str, re.DOTALL)
+
+        for match in matches:
+            try:
+                potential_json = match
+                parsed_json = json.loads(potential_json)
+                if 'steps' in parsed_json:
+                    return parsed_json
+            except json.JSONDecodeError as e:
+                continue
+
+        pattern = r'(\{.*"action".*\})'
+        matches = re.findall(pattern, json_str, re.DOTALL)
+
+        for match in matches:
+            try:
+                potential_json = match
+                parsed_json = json.loads(potential_json)
+                if 'action' in parsed_json:
+                    return {'steps': [parsed_json]}
+            except json.JSONDecodeError as e:
+                continue
+        logging.info("Unable to parse JSON structure from the message")
+        return {}
+
+    def variableMap_to_string(self, input_map):
+
+        if not input_map:
+            return "- no variables available -"
+
+        # Initialize an empty string
+        output_string = "\n\nYou can use the information given by this set of variables to complete your task:\n"
+        # Iterate through the map to format the string
+        for index, (key, value) in enumerate(input_map.items(), start=1):
+            output_string += f"-{key} = {value}\n"
+        # Remove the last newline character for clean output
+        return output_string.rstrip()
+
+    def extract_response(self, response):
         response_data = response.json()
 
         logging.info(f"Response from openai {response_data}")
@@ -154,45 +239,7 @@ class DomAnalyzer:
         else:
             raise Exception(f"No content found in response or invalid response format:{response_data}")
 
-    def format_action(self, action):
-        return f"{{\"action\": \"{action['action']}\", \"css_selector\": \"{action['css_selector']}\", \"Text\": \"{action['text']}\", \"explanation\": \"{action['explanation']}\", \"description\": \"{action['description']}\"}}"
-
-    def extract_steps(self, json_str):
-        try:
-            data = json.loads(json_str)
-            if 'steps' in data:
-                return data
-        except json.JSONDecodeError:
-            pass
-        pattern = r'(\{.*"steps".*\})'
-        matches = re.findall(pattern, json_str, re.DOTALL)
-
-        for match in matches:
-            try:
-                potential_json = match
-                parsed_json = json.loads(potential_json)
-                if 'steps' in parsed_json:
-                    return parsed_json
-            except json.JSONDecodeError as e:
-                continue
-
-        logging.info("Unable to parse JSON structure from the message")
-        return {}
-
-    def variableMap_to_string(self, input_map):
-
-        if not input_map:
-            return "- no variables available -"
-
-        # Initialize an empty string
-        output_string = "\n\nYou can use the information given by this set of variables to complete your task:\n"
-        # Iterate through the map to format the string
-        for index, (key, value) in enumerate(input_map.items(), start=1):
-            output_string += f"-{key} = {value}\n"
-        # Remove the last newline character for clean output
-        return output_string.rstrip()
-
-    def resolve_followup(self, duplicate, valid, last_action):
+    def resolve_follow_up(self, duplicate, valid, last_action, executed_actions_str):
         if duplicate is True:
             return f"Please note that the last action you provided is duplicate, so this action {last_action} has already been executed"
 
@@ -201,4 +248,16 @@ class DomAnalyzer:
 
         if valid is False:
             return f"Please note that the last action you provided is invalid given the provided markdown. {last_action}, please try again"
-        return ""
+        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action"
+
+    def cache_response(self, session_id, response):
+        self.response_cache[session_id] = response
+
+    def get_cached_response(self, session_id):
+        """
+        Retrieve a cached response for a given session ID, if available.
+
+        :param session_id: The session ID whose response to retrieve.
+        :return: The cached response, or None if no response is cached for the session ID.
+        """
+        return self.response_cache.get(session_id, None)
