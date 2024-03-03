@@ -18,8 +18,11 @@ def process_prompt(session_id):
     user_prompt = data.get('user_prompt')
     actions_executed = data.get("actions_executed")
     variable_map = data.get("variables_map")
+    duplicate = data.get("duplicate", False)  # Defaulting to False if not provided
+    valid = data.get("valid", False)  # Defaulting to False if not provided
+    last_action = data.get("last_action")
     variable_map_str = dom_analyzer.variableMap_to_string(variable_map)
-    analysis_result = dom_analyzer.get_actions(session_id, user_prompt, html_doc, actions_executed, variable_map_str)
+    analysis_result = dom_analyzer.get_actions(session_id, user_prompt, html_doc, actions_executed, variable_map_str, duplicate, valid, last_action)
     print(analysis_result)
 
     return jsonify(analysis_result)

@@ -58,7 +58,9 @@ class DomAnalyzer:
         The output format should be {"steps":[{ "action":..,"css_selector":...., "text":..., "explanation":..., "description":...}]}
     """
 
-    user_input_default = """\n\nAlready executed actions:\n @@@last_played_actions@@@ \n 
+    user_input_default = """
+    \n\n@@@followup@@@ \n
+    \n\nAlready executed actions:\n @@@last_played_actions@@@ \n 
     \n\nAnd this is your task: @@@task@@@
     \n\nYou can use the information given by this set of variables to complete your task: 
     \n @@@variables@@@
@@ -74,7 +76,7 @@ class DomAnalyzer:
         if self.gpt_model not in api_map:
             raise ValueError(f"Model '{self.gpt_model}' is not supported")
 
-    def get_actions(self, session_id, user_prompt, html_doc, actions_executed, variables_string="- no variables available -", user_input=user_input_default, system_input=system_input_default):
+    def get_actions(self, session_id, user_prompt, html_doc, actions_executed, variables_string="- no variables available -", duplicate=False, valid=True, last_action=None, user_input=user_input_default, system_input=system_input_default):
 
         markdown_content = convert_to_md(html_doc)
 
@@ -95,8 +97,14 @@ class DomAnalyzer:
         user_input = user_input.replace("@@@variables@@@", variables_string)
         system_input = system_input.replace("@@@variables@@@", variables_string)
 
+        followup = self.resolve_followup(duplicate, valid, last_action)
+        user_input = user_input.replace("@@@followup@@@", followup)
+        system_input = system_input.replace("@@@followup@@@", followup)
+
         assistant_prompt = []
         assistant_prompt.extend(action for action in actions_executed)
+        if last_action is not None and (valid == False or duplicate == True):  # Check if last_action exists
+            assistant_prompt.append(last_action)
         logging.info(f"Assistant prompt: {assistant_prompt}")
 
         api_info = api_map_json[self.gpt_model]
@@ -183,3 +191,14 @@ class DomAnalyzer:
             output_string += f"-{key} = {value}\n"
         # Remove the last newline character for clean output
         return output_string.rstrip()
+
+    def resolve_followup(self, duplicate, valid, last_action):
+        if duplicate is True:
+            return f"Please note that the last action you provided is duplicate, so this action {last_action} has already been executed"
+
+        if valid is False and last_action is None:
+            return f"Please note that the last action you provided is invalid given the provided markdown. {last_action}, please try again"
+
+        if valid is False:
+            return f"Please note that the last action you provided is invalid given the provided markdown. {last_action}, please try again"
+        return ""
