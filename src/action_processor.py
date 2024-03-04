@@ -62,8 +62,9 @@ class DomAnalyzer:
     \n\nAnd this is your task: @@@task@@@
     \n\nYou can use the information given by this set of variables to complete your task: 
     \n @@@variables@@@
-    \n\nImagine you already executed the given list of \"previous actions\", what actions remain to complete the following task, (remember to just return "finish" if you think you are done with your task):
-    \n Here is the Markdown: @@@markdown@@@
+    """
+    markdown_input_default = """
+    \n Here is the Markdown of the page you will be executing the actions on: @@@markdown@@@
     """
 
     def __init__(self, cache_ttl=3600, cache_maxsize=1000):
@@ -87,18 +88,21 @@ class DomAnalyzer:
         user_input = user_input.replace("@@@variables@@@", variables_string)
         system_input = system_input.replace("@@@variables@@@", variables_string)
 
-        max_retries = 3
+        markdown_input = self.markdown_input_default.replace("@@@markdown@@@", markdown_content)
+
+        max_retries = 5
         attempts = 0
         formatted = True
 
         while attempts < max_retries:
             if session_id not in self.cache:
                 system_content = {'role': 'system', 'message': system_input}
+                markdown_content = {'role': 'user', 'message': markdown_input}
                 user_content = {'role': 'user', 'message': user_input}
 
                 try:
-                    response = self.call_model([system_content, user_content])
-                    self.cache[session_id] = [system_content, user_content]
+                    response = self.call_model([system_content, markdown_content, user_content])
+                    self.cache[session_id] = [system_content, markdown_content, user_content]
                     self.md_cache[session_id] = markdown_content
                     choices = self.extract_response(response)
                     extracted_response = self.extract_steps(choices)
@@ -114,12 +118,13 @@ class DomAnalyzer:
                     logging.info(f"Failed to get response, next attempt#{attempts} ")
                     continue  # Retry the loop
                 except Exception as e:
+                    formatted = True
                     attempts += 1
                     logging.info(f"Failed to get response, next attempt#{attempts} ")
                     continue
             else:
                 executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
-                follow_up = self.resolve_follow_up(duplicate, valid, formatted, self.format_action(last_action), executed_actions_str)
+                follow_up = self.resolve_follow_up(duplicate, valid, formatted, self.format_action(last_action), executed_actions_str, user_prompt)
                 if markdown_content == self.md_cache[session_id]:
                     follow_up_content = {'role': 'user', 'message': follow_up}
                 else:
@@ -259,20 +264,17 @@ class DomAnalyzer:
         else:
             raise Exception(f"No content found in response or invalid response format:{response_data}")
 
-    def resolve_follow_up(self, duplicate, valid, formatted,  last_action, executed_actions_str):
+    def resolve_follow_up(self, duplicate, valid, formatted,  last_action, executed_actions_str, task):
         if formatted is False:
             return f"Please note that the last action you provided is not in the required json format, The output format should be {{\"steps\":[{{ \"action\":..,\"css_selector\":...., \"text\":..., \"explanation\":..., \"description\":...}}]}}"
 
-        if duplicate is True:
-            return f"Please note that the last action you provided is duplicate, I need the next action"
-
-        if valid is False and last_action is None:
-            return f"Please note that the last action you provided is invalid given the provided markdow, please try another way"
-
         if valid is False:
-            return f"Please note that the last action you provided is invalid or not interactable in selenium, please try another way"
+            return f"Please note that the last action you provided is invalid or not interactable in selenium, so i need another way to perform the task"
 
-        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action"
+        if duplicate is True:
+            return f"Please note that the last action you provided is duplicate, I need the next action to perform the task"
+
+        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action to achieve the task: {task}"
 
     def cache_response(self, session_id, response):
         self.response_cache[session_id] = response
