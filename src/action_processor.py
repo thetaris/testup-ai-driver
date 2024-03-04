@@ -95,21 +95,28 @@ class DomAnalyzer:
             if session_id not in self.cache:
                 system_content = {'role': 'system', 'message': system_input}
                 user_content = {'role': 'user', 'message': user_input}
-                response = self.call_model([system_content, user_content])
-                self.cache[session_id] = [system_content, user_content]
-                self.md_cache[session_id] = markdown_content
-                choices = self.extract_response(response)
-                extracted_response = self.extract_steps(choices)
 
-                if not extracted_response or extracted_response == {}:  # Check if the response is empty
+                try:
+                    response = self.call_model([system_content, user_content])
+                    self.cache[session_id] = [system_content, user_content]
+                    self.md_cache[session_id] = markdown_content
+                    choices = self.extract_response(response)
+                    extracted_response = self.extract_steps(choices)
+                    if not extracted_response or extracted_response == {}:  # Check if the response is empty
+                        raise ValueError("Empty or invlaid response")
 
+                    return extracted_response
+                except ValueError as e:
                     attempts += 1
                     last_action = choices
                     formatted = False
                     duplicate = False
                     logging.info(f"Failed to get response, next attempt#{attempts} ")
                     continue  # Retry the loop
-                return extracted_response
+                except Exception as e:
+                    attempts += 1
+                    logging.info(f"Failed to get response, next attempt#{attempts} ")
+                    continue
             else:
                 executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
                 follow_up = self.resolve_follow_up(duplicate, valid, formatted, self.format_action(last_action), executed_actions_str)
@@ -121,22 +128,28 @@ class DomAnalyzer:
 
                 assistant_content = {'role': 'assistant', 'message': self.format_action(last_action)}
                 # add assistant_content, follow_up_content to the cache
-                self.cache[session_id].append(assistant_content)
-                self.cache[session_id].append(follow_up_content)
-                model_input = [*self.cache[session_id], assistant_content, follow_up_content]
-                response = self.call_model(model_input)
-                choices = self.extract_response(response)
-                extracted_response = self.extract_steps(choices)
-                if not extracted_response or extracted_response == {}:  # Check if the response is empty
+
+                try:
+                    response = self.call_model([*self.cache[session_id], assistant_content, follow_up_content])
+                    self.cache[session_id].append(assistant_content)
+                    self.cache[session_id].append(follow_up_content)
+                    choices = self.extract_response(response)
+                    extracted_response = self.extract_steps(choices)
+                    if not extracted_response or extracted_response == {}:  # Check if the response is empty
+                        raise ValueError("Empty or invlaid response")
+
+                    return extracted_response
+                except ValueError as e:
                     attempts += 1
                     last_action = choices
                     formatted = False
                     duplicate = False
                     logging.info(f"Failed to get response, next attempt#{attempts} ")
                     continue  # Retry the loop
-
-                return extracted_response
-
+                except Exception as e:
+                    attempts += 1
+                    logging.info(f"Failed to get response, next attempt#{attempts} ")
+                    continue
 
 
 
@@ -258,6 +271,7 @@ class DomAnalyzer:
 
         if valid is False:
             return f"Please note that the last action you provided is invalid or not interactable in selenium, please try another way"
+
         return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action"
 
     def cache_response(self, session_id, response):
