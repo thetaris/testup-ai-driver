@@ -116,15 +116,17 @@ class DomAnalyzer:
                     formatted = False
                     duplicate = False
                     logging.info(f"Failed to get response, next attempt#{attempts} ")
+                    time.sleep(1)
                     continue  # Retry the loop
                 except Exception as e:
                     formatted = True
                     attempts += 1
                     logging.info(f"Failed to get response, next attempt#{attempts} ")
+                    time.sleep(1)
                     continue
             else:
                 executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
-                follow_up = self.resolve_follow_up(duplicate, valid, formatted, self.format_action(last_action), executed_actions_str, user_prompt)
+                follow_up = self.resolve_follow_up(duplicate, valid, formatted, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
                 if markdown_content == self.md_cache[session_id]:
                     follow_up_content = {'role': 'user', 'message': follow_up}
                 else:
@@ -150,10 +152,12 @@ class DomAnalyzer:
                     formatted = False
                     duplicate = False
                     logging.info(f"Failed to get response, next attempt#{attempts} ")
+                    time.sleep(1)
                     continue  # Retry the loop
                 except Exception as e:
                     attempts += 1
                     logging.info(f"Failed to get response, next attempt#{attempts} ")
+                    time.sleep(1)
                     continue
 
 
@@ -264,7 +268,7 @@ class DomAnalyzer:
         else:
             raise Exception(f"No content found in response or invalid response format:{response_data}")
 
-    def resolve_follow_up(self, duplicate, valid, formatted,  last_action, executed_actions_str, task):
+    def resolve_follow_up(self, duplicate, valid, formatted,  last_action, executed_actions_str, task, variables_string):
         if formatted is False:
             return f"Please note that the last action you provided is not in the required json format, The output format should be {{\"steps\":[{{ \"action\":..,\"css_selector\":...., \"text\":..., \"explanation\":..., \"description\":...}}]}}"
 
@@ -274,7 +278,7 @@ class DomAnalyzer:
         if duplicate is True:
             return f"Please note that the last action you provided is duplicate, I need the next action to perform the task"
 
-        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action to achieve the task: {task}"
+        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action to achieve the task: {task} \n You can use the information given by this set of variables to complete your task: {variables_string}"
 
     def cache_response(self, session_id, response):
         self.response_cache[session_id] = response
