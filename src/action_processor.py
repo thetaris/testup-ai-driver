@@ -12,6 +12,24 @@ import time
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
+def convert_keys_to_lowercase(data):
+    """
+    Recursively convert all keys in a given data structure (which can be a dictionary,
+    a list of dictionaries, or nested dictionaries) to lowercase.
+
+    Parameters:
+    - data: The data structure containing the keys to be converted to lowercase.
+
+    Returns:
+    - The modified data structure with all keys converted to lowercase.
+    """
+    if isinstance(data, dict):
+        return {k.lower(): convert_keys_to_lowercase(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [convert_keys_to_lowercase(item) for item in data]
+    else:
+        return data
+
 class DomAnalyzer:
     gpt_api_key = os.getenv("OPENAI_API_KEY")
     gpt_model = os.getenv("GPT_MODEL", "gpt-3.5-turbo-1106")
@@ -190,7 +208,7 @@ class DomAnalyzer:
         try:
             data = json.loads(json_str)
             if 'steps' in data:
-                return data
+                return convert_keys_to_lowercase(data)
         except json.JSONDecodeError:
             pass
         pattern = r'(\{.*"steps".*\})'
@@ -201,7 +219,7 @@ class DomAnalyzer:
                 potential_json = match
                 parsed_json = json.loads(potential_json)
                 if 'steps' in parsed_json:
-                    return parsed_json
+                    return convert_keys_to_lowercase(parsed_json)
             except json.JSONDecodeError as e:
                 continue
 
@@ -213,7 +231,7 @@ class DomAnalyzer:
                 potential_json = match
                 parsed_json = json.loads(potential_json)
                 if 'action' in parsed_json:
-                    return {'steps': [parsed_json]}
+                    return convert_keys_to_lowercase({'steps': [parsed_json]})
             except json.JSONDecodeError as e:
                 continue
         logging.info("Unable to parse JSON structure from the message")
@@ -270,7 +288,7 @@ class DomAnalyzer:
 
     def resolve_follow_up(self, duplicate, valid, formatted,  last_action, executed_actions_str, task, variables_string):
         if formatted is False:
-            return f"Please note that the last action you provided is not in the required json format, The output format should be {{\"steps\":[{{ \"action\":..,\"css_selector\":...., \"text\":..., \"explanation\":..., \"description\":...}}]}}"
+            return f"Please note that the last action you provided is not in the required json format, The output format should be {{\"steps\":[{{ \"action\":..,\"css_selector\":...., \"text\":..., \"explanation\":..., \"description\":...}}]}}, if task is achieved return finish action"
 
         if valid is False:
             return f"Please note that the last action you provided is invalid or not interactable in selenium, so i need another way to perform the task"
