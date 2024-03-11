@@ -25,6 +25,13 @@ def convert_to_md(html_doc):
     for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
         comment.extract()
 
+    for tag in soup.find_all():
+        for attr in ['href', 'src', 'xlink:href']:
+            if attr in tag.attrs:
+                if 'base64,' in tag[attr]:
+                    # Option 1: Remove the attribute entirely
+                    del tag[attr]
+
     for li in soup.find_all('li'):
         a = li.find('a')
         if a:
