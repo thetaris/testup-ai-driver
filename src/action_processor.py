@@ -1,12 +1,11 @@
-from gpt_api_spec import api_map, api_map_json
 from md_converter import convert_to_md
 from cachetools import TTLCache
-import requests
-import json
+from gpt_client import GptClient
 import os
-import logging
 import re
+import logging
 import time
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -30,9 +29,8 @@ def convert_keys_to_lowercase(data):
     else:
         return data
 
+
 class DomAnalyzer:
-    gpt_api_key = os.getenv("OPENAI_API_KEY")
-    gpt_model = os.getenv("GPT_MODEL", "gpt-3.5-turbo-1106")
     gpt_prompt = os.getenv("GPT_PROMPT", """
      You are a browser automation assistant. Your job is to analyze the already executed actions and determine the next actions needed to complete the provided task.
     The actions that you can take are:
@@ -88,8 +86,7 @@ class DomAnalyzer:
     def __init__(self, cache_ttl=3600, cache_maxsize=1000):
         self.cache = TTLCache(maxsize=1000, ttl=3600)
         self.md_cache = TTLCache(maxsize=1000, ttl=3600)
-        if self.gpt_model not in api_map:
-            raise ValueError(f"Model '{self.gpt_model}' is not supported")
+        self.gpt_client = GptClient()
 
     def get_actions(self, session_id, user_prompt, html_doc, actions_executed, variables_string="- no variables available -", duplicate=False, valid=True, last_action=None, user_input=user_input_default, system_input=system_input_default):
 
@@ -119,18 +116,17 @@ class DomAnalyzer:
                 user_content = {'role': 'user', 'message': user_input}
 
                 try:
-                    response = self.call_model([system_content, markdown_content, user_content])
+                    response = self.gpt_client.make_request([system_content, markdown_content, user_content])
                     self.cache[session_id] = [system_content, markdown_content, user_content]
                     self.md_cache[session_id] = markdown_content
-                    choices = self.extract_response(response)
-                    extracted_response = self.extract_steps(choices)
+                    extracted_response = self.extract_steps(response)
                     if not extracted_response or extracted_response == {}:  # Check if the response is empty
                         raise ValueError("Empty or invlaid response")
 
                     return extracted_response
                 except ValueError as e:
                     attempts += 1
-                    last_action = choices
+                    last_action = response
                     formatted = False
                     duplicate = False
                     logging.info(f"Failed to get response, next attempt#{attempts} ")
@@ -155,18 +151,17 @@ class DomAnalyzer:
                 # add assistant_content, follow_up_content to the cache
 
                 try:
-                    response = self.call_model([*self.cache[session_id], assistant_content, follow_up_content])
+                    response = self.gpt_client.make_request([*self.cache[session_id], assistant_content, follow_up_content])
                     self.cache[session_id].append(assistant_content)
                     self.cache[session_id].append(follow_up_content)
-                    choices = self.extract_response(response)
-                    extracted_response = self.extract_steps(choices)
+                    extracted_response = self.extract_steps(response)
                     if not extracted_response or extracted_response == {}:  # Check if the response is empty
                         raise ValueError("Empty or invlaid response")
 
                     return extracted_response
                 except ValueError as e:
                     attempts += 1
-                    last_action = choices
+                    last_action = response
                     formatted = False
                     duplicate = False
                     logging.info(f"Failed to get response, next attempt#{attempts} ")
@@ -177,20 +172,6 @@ class DomAnalyzer:
                     logging.info(f"Failed to get response, next attempt#{attempts} ")
                     time.sleep(1)
                     continue
-
-
-
-    def call_model(self, contents):
-        api_info = api_map_json[self.gpt_model]
-        payload = api_info['payload'](self.gpt_model, contents)
-        logging.info(f"sending request {payload}")
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.gpt_api_key}"
-        }
-        # Send POST request to OpenAI API
-        response = requests.post(api_info['endpoint'], headers=headers, json=payload)
-        return response
 
     def format_action(self, action):
         if action is None:
@@ -203,6 +184,43 @@ class DomAnalyzer:
             return action
 
         return f"{{\"action\": \"{action['action']}\", \"css_selector\": \"{action['css_selector']}\", \"Text\": \"{action['text']}\", \"explanation\": \"{action['explanation']}\", \"description\": \"{action['description']}\"}}"
+
+    def variableMap_to_string(self, input_map):
+
+        if not input_map:
+            return "- no variables available -"
+
+        # Initialize an empty string
+        output_string = "\n\nYou can use the information given by this set of variables to complete your task:\n"
+        # Iterate through the map to format the string
+        for index, (key, value) in enumerate(input_map.items(), start=1):
+            output_string += f"-{key} = {value}\n"
+        # Remove the last newline character for clean output
+        return output_string.rstrip()
+
+    def resolve_follow_up(self, duplicate, valid, formatted,  last_action, executed_actions_str, task, variables_string):
+        if formatted is False:
+            return f"Please note that the last action you provided is not in the required json format, The output format should be {{\"steps\":[{{ \"action\":..,\"css_selector\":...., \"text\":..., \"explanation\":..., \"description\":...}}]}}, if task is achieved return finish action"
+
+        if valid is False:
+            return f"Please note that the last action you provided is invalid or not interactable in selenium, so i need another way to perform the task"
+
+        if duplicate is True:
+            return f"Please note that the last action you provided is duplicate, I need the next action to perform the task"
+
+        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action to achieve the task: {task} \n You can use the information given by this set of variables to complete your task: {variables_string}"
+
+    def cache_response(self, session_id, response):
+        self.response_cache[session_id] = response
+
+    def get_cached_response(self, session_id):
+        """
+        Retrieve a cached response for a given session ID, if available.
+
+        :param session_id: The session ID whose response to retrieve.
+        :return: The cached response, or None if no response is cached for the session ID.
+        """
+        return self.response_cache.get(session_id, None)
 
     def extract_steps(self, json_str):
         try:
@@ -236,76 +254,3 @@ class DomAnalyzer:
                 continue
         logging.info("Unable to parse JSON structure from the message")
         return {}
-
-    def variableMap_to_string(self, input_map):
-
-        if not input_map:
-            return "- no variables available -"
-
-        # Initialize an empty string
-        output_string = "\n\nYou can use the information given by this set of variables to complete your task:\n"
-        # Iterate through the map to format the string
-        for index, (key, value) in enumerate(input_map.items(), start=1):
-            output_string += f"-{key} = {value}\n"
-        # Remove the last newline character for clean output
-        return output_string.rstrip()
-
-    def extract_response(self, response):
-        response_data = response.json()
-
-        logging.info(f"Response from openai {response_data}")
-
-        response_object_type = response_data.get('object', '')
-
-        if "choices" in response_data and len(response_data["choices"]) > 0:
-            if response_object_type == 'chat.completion':
-                # Handling response for 'chat.completion'
-                assistant_message_json_str = response_data["choices"][0].get("message", {}).get("content", "")
-            elif response_object_type == 'text_completion':
-                # Handling response for 'text_completion'
-                assistant_message_json_str = response_data["choices"][0].get("text", "")
-            else:
-                raise Exception("Unknown response object type.")
-
-            total_tokens = response_data["usage"].get("total_tokens", 0)
-
-            try:
-                # Parse the extracted content as JSON
-                assistant_message_json_str = assistant_message_json_str.replace("```json", "").replace("```", "").strip()
-                logging.info(f"return assistant_message_json_str = {assistant_message_json_str}")
-                logging.info(f"final assistant_message_json_str = {assistant_message_json_str}")
-
-                assistant_message = assistant_message_json_str
-            except json.JSONDecodeError:
-                raise Exception("Error decoding the extracted content as JSON.")
-
-            logging.info(f"Tokens: {total_tokens}")
-            # Store in new JSON object
-            logging.info(f"Returning: {assistant_message}")
-            return assistant_message
-        else:
-            raise Exception(f"No content found in response or invalid response format:{response_data}")
-
-    def resolve_follow_up(self, duplicate, valid, formatted,  last_action, executed_actions_str, task, variables_string):
-        if formatted is False:
-            return f"Please note that the last action you provided is not in the required json format, The output format should be {{\"steps\":[{{ \"action\":..,\"css_selector\":...., \"text\":..., \"explanation\":..., \"description\":...}}]}}, if task is achieved return finish action"
-
-        if valid is False:
-            return f"Please note that the last action you provided is invalid or not interactable in selenium, so i need another way to perform the task"
-
-        if duplicate is True:
-            return f"Please note that the last action you provided is duplicate, I need the next action to perform the task"
-
-        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action to achieve the task: {task} \n You can use the information given by this set of variables to complete your task: {variables_string}"
-
-    def cache_response(self, session_id, response):
-        self.response_cache[session_id] = response
-
-    def get_cached_response(self, session_id):
-        """
-        Retrieve a cached response for a given session ID, if available.
-
-        :param session_id: The session ID whose response to retrieve.
-        :return: The cached response, or None if no response is cached for the session ID.
-        """
-        return self.response_cache.get(session_id, None)

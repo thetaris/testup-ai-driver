@@ -17,10 +17,12 @@ spec:
       containers:
         - env:
             - name: OPENAI_API_KEY
-              value: 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
+              value: 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
             - name: GPT_MODEL
               value: gpt-3.5-turbo-1106
-          image: 757835444551.dkr.ecr.eu-central-1.amazonaws.com/base_default_testup_prompt_service:3.0.0
+            - name: MAX_REQUESTS
+              value: 40
+          image: 757835444551.dkr.ecr.eu-central-1.amazonaws.com/base_default_testup_prompt_service:4.5.0
           imagePullPolicy: IfNotPresent
           name: prompt-service
           ports:
