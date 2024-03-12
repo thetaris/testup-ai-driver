@@ -8,6 +8,20 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
+def clean_markdown(markdown):
+    # Remove base64 encoded images
+    cleaned_markdown = re.sub(r'!\[[^\]]*\]\(data:image\/[a-zA-Z]+;base64,[^\)]+\)', '', markdown)
+
+    # Remove CSS styles - targeting patterns that start with a period or within style tags
+    cleaned_markdown = re.sub(r'\.[\s\S]*?\{[\s\S]*?\}', '', cleaned_markdown)
+    cleaned_markdown = re.sub(r'<style>[\s\S]*?<\/style>', '', cleaned_markdown)
+
+    # Remove excessive whitespace
+    cleaned_markdown = re.sub(r'\n\s*\n', '\n\n', cleaned_markdown)
+
+    return cleaned_markdown
+
+
 def convert_to_md(html_doc):
 
     logging.info('------------------------------------------------')
@@ -27,10 +41,11 @@ def convert_to_md(html_doc):
 
     for tag in soup.find_all():
         for attr in ['href', 'src', 'xlink:href']:
-            if attr in tag.attrs:
-                if 'base64,' in tag[attr]:
-                    # Option 1: Remove the attribute entirely
-                    del tag[attr]
+            if attr in tag.attrs and 'base64,' in tag[attr].lower():
+                del tag[attr]
+
+        if 'style' in tag.attrs:
+            del tag['style']
 
     for li in soup.find_all('li'):
         a = li.find('a')
@@ -62,6 +77,6 @@ def convert_to_md(html_doc):
     markdown = re.sub('\\s+', ' ', markdown)
     markdown = markdown.replace('\\_', '_')
 
-    logging.info(f"markdown: {markdown}")
+    return clean_markdown(markdown)
 
-    return markdown
+
