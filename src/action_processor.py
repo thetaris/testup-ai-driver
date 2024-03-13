@@ -12,16 +12,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 def convert_keys_to_lowercase(data):
-    """
-    Recursively convert all keys in a given data structure (which can be a dictionary,
-    a list of dictionaries, or nested dictionaries) to lowercase.
-
-    Parameters:
-    - data: The data structure containing the keys to be converted to lowercase.
-
-    Returns:
-    - The modified data structure with all keys converted to lowercase.
-    """
     if isinstance(data, dict):
         return {k.lower(): convert_keys_to_lowercase(v) for k, v in data.items()}
     elif isinstance(data, list):
@@ -84,6 +74,7 @@ class DomAnalyzer:
 
     def __init__(self, cache_ttl=3600, cache_maxsize=1000):
         self.cache = TTLCache(maxsize=1000, ttl=3600)
+        self.log_cache = TTLCache(maxsize=1000, ttl=3600)
         self.md_cache = TTLCache(maxsize=1000, ttl=3600)
         self.gpt_client = GptClient()
 
@@ -116,6 +107,7 @@ class DomAnalyzer:
                 try:
                     response = self.gpt_client.make_request([system_content, markdown_content, user_content])
                     self.cache[session_id] = [system_content, markdown_content, user_content]
+                    self.log_cache[session_id] = [system_content, {'role': 'user', 'message': html_doc}, user_content]
                     self.md_cache[session_id] = markdown
                     extracted_response = self.extract_steps(response)
                     if not extracted_response or extracted_response == {}:  # Check if the response is empty
@@ -154,8 +146,10 @@ class DomAnalyzer:
                 follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
                 if markdown == self.md_cache[session_id]:
                     follow_up_content = {'role': 'user', 'message': follow_up}
+                    follow_up_content_log = {'role': 'user', 'message': follow_up}
                 else:
                     follow_up_content = {'role': 'user', 'message': f"Here is the new markdown: {markdown}\n\n{follow_up}"}
+                    follow_up_content_log = {'role': 'user', 'message': f"Here is the new markdown: {html_doc}\n\n{follow_up}"}
                     self.md_cache[session_id] = markdown
 
                 assistant_content = {'role': 'assistant', 'message': self.format_action(last_action)}
@@ -165,7 +159,17 @@ class DomAnalyzer:
                     response = self.gpt_client.make_request([*self.cache[session_id], assistant_content, follow_up_content])
                     self.cache[session_id].append(assistant_content)
                     self.cache[session_id].append(follow_up_content)
+
+                    self.log_cache[session_id].append(assistant_content)
+                    self.log_cache[session_id].append(follow_up_content_log)
+
                     extracted_response = self.extract_steps(response)
+
+                    logging.info("----------------------------------------"
+                                 "-----------------------------------------------")
+                    logging.info(f"history: {self.log_cache[session_id]}")
+                    logging.info("----------------------------------------"
+                                 "-----------------------------------------------")
                     if not extracted_response or extracted_response == {}:  # Check if the response is empty
                         raise ValueError("Empty or invlaid response")
 
@@ -233,18 +237,6 @@ class DomAnalyzer:
             return f"Please note that the last action you provided is duplicate, I need the next action to perform the task"
 
         return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action to achieve the task: \"{task}\" or return finish action if the task is completed\n {variables_string}"
-
-    def cache_response(self, session_id, response):
-        self.response_cache[session_id] = response
-
-    def get_cached_response(self, session_id):
-        """
-        Retrieve a cached response for a given session ID, if available.
-
-        :param session_id: The session ID whose response to retrieve.
-        :return: The cached response, or None if no response is cached for the session ID.
-        """
-        return self.response_cache.get(session_id, None)
 
     def extract_steps(self, json_str):
         try:
