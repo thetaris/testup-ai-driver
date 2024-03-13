@@ -1,7 +1,6 @@
 from md_converter import convert_to_md
 from cachetools import TTLCache
 from gpt_client import GptClient
-import os
 import re
 import logging
 import time
@@ -21,30 +20,6 @@ def convert_keys_to_lowercase(data):
 
 
 class DomAnalyzer:
-    gpt_prompt = os.getenv("GPT_PROMPT", """
-     You are a browser automation assistant. Your job is to analyze the already executed actions and determine the next actions needed to complete the provided task.
-    The actions that you can take are:
-    1. click (if you need to click something on the screen)
-    2. enter_text (if you believe you need to write something)
-    3. wait (when the previous action changed the source code and you need the new source code)
-    4. finish (at the end to know that we are done or if all actions have been executed)
-    5. error ( the given task cannot be accomplished)
-    You will be given:
-    - a markdown of the currently visible section of the website you are on
-    - A list of already executed actions that we no longer need to execute. They should not be in the output at all
-    - a task, that you should try to execute on the current page (remember to not repeat already executed actions)
-    
-    Each entry is an object of 5 fields, the fields are the following:
-    1. action: can be one of: click, enter_text, wait, error, or finish.
-    2. css_selector: (only needed for click or enter-text), this is the css id of the html element(\'li\', \'button\', \'input\', \'textarea\', \'a\'). Always use the ID of the element as css selector!
-    3. text: this is optional and contains the text you want to input in case of an enter-text action. 
-    4. explanation: this is why you chose this action.
-    5. description: detailed description of the action
-    The output format should be {"steps":[{ "action":..,"css_selector":...., "text":..., "explanation":..., "description":...}]}
-    \n
-    """)
-    gpt_check_prompt = os.getenv("GPT_CHECK_PROMPT")
-    session_histories = {}
     system_input_default = """
     You are a testautomation system. Your job is to analyze the already executed actions and determine the next actions needed to complete the provided task.
     
@@ -145,33 +120,35 @@ class DomAnalyzer:
                 executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
                 follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
                 if markdown == self.md_cache[session_id]:
-                    follow_up_content = {'role': 'user', 'message': follow_up}
-                    follow_up_content_log = {'role': 'user', 'message': follow_up}
+                    follow_up_content = [{'role': 'user', 'message': follow_up}]
+                    follow_up_content_log = [{'role': 'user', 'message': follow_up}]
                 else:
-                    follow_up_content = {'role': 'user', 'message': f"Here is the new markdown: {markdown}\n\n{follow_up}"}
-                    follow_up_content_log = {'role': 'user', 'message': f"Here is the new markdown: {html_doc}\n\n{follow_up}"}
+                    follow_up_content = [{'role': 'user', 'message': f"Here is the new markdown: {markdown}"},
+                                         {'role': 'user', 'message': follow_up}]
+                    follow_up_content_log = [{'role': 'user', 'message': f"Here is the new markdown: {html_doc}"},
+                                             {'role': 'user', 'message': follow_up}]
                     self.md_cache[session_id] = markdown
 
                 assistant_content = {'role': 'assistant', 'message': self.format_action(last_action)}
                 # add assistant_content, follow_up_content to the cache
 
                 try:
-                    response = self.gpt_client.make_request([*self.cache[session_id], assistant_content, follow_up_content])
+                    response = self.gpt_client.make_request([*self.cache[session_id], assistant_content, *follow_up_content])
                     self.cache[session_id].append(assistant_content)
-                    self.cache[session_id].append(follow_up_content)
+                    self.cache[session_id].extend(follow_up_content)
 
                     self.log_cache[session_id].append(assistant_content)
-                    self.log_cache[session_id].append(follow_up_content_log)
+                    self.log_cache[session_id].extend(follow_up_content_log)
 
                     extracted_response = self.extract_steps(response)
 
-                    logging.info("----------------------------------------"
-                                 "-----------------------------------------------")
-                    logging.info(f"history: {self.log_cache[session_id]}")
-                    logging.info("----------------------------------------"
-                                 "-----------------------------------------------")
-                    if not extracted_response or extracted_response == {}:  # Check if the response is empty
-                        raise ValueError("Empty or invlaid response")
+                    # logging.info("----------------------------------------"
+                    #              "-----------------------------------------------")
+                    # logging.info(f"history: {self.log_cache[session_id]}")
+                    # logging.info("----------------------------------------"
+                    #              "-----------------------------------------------")
+                    if not extracted_response or extracted_response == {}:
+                        raise ValueError("Empty or invalid response")
 
                     first_step = extracted_response.get('steps', [{}])[0]  # Safely get the first step
                     if first_step.get('css_selector', '').find('#') == -1 and first_step.get('action') != 'finish':
@@ -226,17 +203,23 @@ class DomAnalyzer:
 
     def resolve_follow_up(self, duplicate, valid, formatted, id_used, last_action, executed_actions_str, task, variables_string):
         if id_used is False:
-            return f"Please note that action {last_action} you provided does not use css id, the needed element has an id , can you try again and provide the id as css_selector instead"
+            return f"Please note that action {last_action} you provided does not use css id, the needed element has an id," \
+                   f" can you try again and provide the id as css_selector instead"
         if formatted is False:
-            return f"Please note that the last action you provided is not in the required json format, The output format should be {{\"steps\":[{{ \"action\":..,\"css_selector\":...., \"text\":..., \"explanation\":..., \"description\":...}}]}}, if task is achieved return finish action"
+            return f"Please note that the last action you provided is not in the required json format," \
+                   f" The output format should be {{\"steps\":[{{ \"action\":..,\"css_selector\":...., \"text\":..., \"explanation\":..., \"description\":...}}]}}, if task is achieved return finish action"
 
         if valid is False:
-            return f"Please note that the last action you provided is invalid or not interactable in selenium, so i need another way to perform the task"
+            return f"Please note that the last action you provided is invalid or not interactable in selenium," \
+                   f" so i need another way to perform the task"
 
         if duplicate is True:
-            return f"Please note that the last action you provided is duplicate, I need the next action to perform the task"
+            return f"Please note that the last action you provided is duplicate," \
+                   f" I need the next action to perform the task"
 
-        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action to achieve the task: \"{task}\" or return finish action if the task is completed\n {variables_string}"
+        return f"Actions Executed so far are \n {executed_actions_str}\n " \
+               f"please provide the next action to achieve the task:" \
+               f" \"{task}\" or return finish action if the task is completed\n {variables_string}"
 
     def extract_steps(self, json_str):
         try:
