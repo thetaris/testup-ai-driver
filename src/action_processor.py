@@ -76,7 +76,6 @@ class DomAnalyzer:
 
     user_input_default = """
     \n\nAnd this is your task: @@@task@@@
-    \n\nYou can use the information given by this set of variables to complete your task: 
     \n @@@variables@@@
     """
     markdown_input_default = """
@@ -88,7 +87,7 @@ class DomAnalyzer:
         self.md_cache = TTLCache(maxsize=1000, ttl=3600)
         self.gpt_client = GptClient()
 
-    def get_actions(self, session_id, user_prompt, html_doc, actions_executed, variables_string="- no variables available -", duplicate=False, valid=True, last_action=None, user_input=user_input_default, system_input=system_input_default):
+    def get_actions(self, session_id, user_prompt, html_doc, actions_executed, variables_string="", duplicate=False, valid=True, last_action=None, user_input=user_input_default, system_input=system_input_default):
 
         markdown = convert_to_md(html_doc)
 
@@ -211,7 +210,7 @@ class DomAnalyzer:
     def variableMap_to_string(self, input_map):
 
         if not input_map:
-            return "- no variables available -"
+            return ""
 
         # Initialize an empty string
         output_string = "\n\nYou can use the information given by this set of variables to complete your task:\n"
@@ -233,7 +232,7 @@ class DomAnalyzer:
         if duplicate is True:
             return f"Please note that the last action you provided is duplicate, I need the next action to perform the task"
 
-        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action to achieve the task: {task} or finish action if the task is completed\n You can use the information given by this set of variables to complete your task: {variables_string}"
+        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action to achieve the task: \"{task}\" or return finish action if the task is completed\n {variables_string}"
 
     def cache_response(self, session_id, response):
         self.response_cache[session_id] = response
