@@ -53,7 +53,10 @@ def convert_to_md(html_doc):
         # Initialize an empty list to hold the desired attributes
         desired_attributes = []
 
-        exclude_attrs = {'class', 'style', 'href', 'value', 'target'}
+        if 'id' in tag.attrs:
+            desired_attributes.append(f'id="{tag["id"]}"')
+
+        exclude_attrs = {'class', 'style', 'href', 'value', 'target', 'id'}
 
         for attr, value in tag.attrs.items():
             if attr not in exclude_attrs:
