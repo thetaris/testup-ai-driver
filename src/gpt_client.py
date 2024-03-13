@@ -43,7 +43,7 @@ class GptClient:
     def extract_response(self, response):
         response_data = response.json()
 
-        # logging.info(f"Response from openai {response_data}")
+        logging.info(f"Response from openai {response_data}")
 
         response_object_type = response_data.get('object', '')
 

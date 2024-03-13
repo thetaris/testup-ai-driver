@@ -90,10 +90,10 @@ class DomAnalyzer:
 
     def get_actions(self, session_id, user_prompt, html_doc, actions_executed, variables_string="- no variables available -", duplicate=False, valid=True, last_action=None, user_input=user_input_default, system_input=system_input_default):
 
-        markdown_content = convert_to_md(html_doc)
+        markdown = convert_to_md(html_doc)
 
-        user_input = user_input.replace("@@@markdown@@@", markdown_content)
-        system_input = system_input.replace("@@@markdown@@@", markdown_content)
+        user_input = user_input.replace("@@@markdown@@@", markdown)
+        system_input = system_input.replace("@@@markdown@@@", markdown)
 
         user_input = user_input.replace("@@@task@@@", user_prompt)
         system_input = system_input.replace("@@@task@@@", user_prompt)
@@ -101,11 +101,12 @@ class DomAnalyzer:
         user_input = user_input.replace("@@@variables@@@", variables_string)
         system_input = system_input.replace("@@@variables@@@", variables_string)
 
-        markdown_input = self.markdown_input_default.replace("@@@markdown@@@", markdown_content)
+        markdown_input = self.markdown_input_default.replace("@@@markdown@@@", markdown)
 
         max_retries = 5
         attempts = 0
         formatted = True
+        id_used = True
 
         while attempts < max_retries:
             if session_id not in self.cache:
@@ -116,18 +117,31 @@ class DomAnalyzer:
                 try:
                     response = self.gpt_client.make_request([system_content, markdown_content, user_content])
                     self.cache[session_id] = [system_content, markdown_content, user_content]
-                    self.md_cache[session_id] = markdown_content
+                    self.md_cache[session_id] = markdown
                     extracted_response = self.extract_steps(response)
                     if not extracted_response or extracted_response == {}:  # Check if the response is empty
                         raise ValueError("Empty or invlaid response")
 
+                    first_step = extracted_response.get('steps', [{}])[0]  # Safely get the first step
+                    if first_step.get('css_selector', '').find('#') == -1 and first_step.get('action') != 'finish':
+                        raise ValueError("Condition not met: cssSelector does not use ID or action is not 'finish'")
+
                     return extracted_response
+
                 except ValueError as e:
                     attempts += 1
-                    last_action = response
-                    formatted = False
+
+                    # Check the specific error message to set formatted and id_used accordingly
+                    if str(e) == "Condition not met: cssSelector does not use ID or action is not 'finish'":
+                        formatted = True
+                        id_used = False
+                        last_action = first_step
+                    else:
+                        last_action = response
+                        formatted = False
+                        id_used = True  # Assuming the default state is that IDs are used
                     duplicate = False
-                    logging.info(f"Failed to get response, next attempt#{attempts} ")
+                    logging.info(f"Failed to get response, next attempt#{attempts}: {e}")
                     time.sleep(1)
                     continue  # Retry the loop
                 except Exception as e:
@@ -138,12 +152,12 @@ class DomAnalyzer:
                     continue
             else:
                 executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
-                follow_up = self.resolve_follow_up(duplicate, valid, formatted, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
-                if markdown_content == self.md_cache[session_id]:
+                follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
+                if markdown == self.md_cache[session_id]:
                     follow_up_content = {'role': 'user', 'message': follow_up}
                 else:
-                    follow_up_content = {'role': 'user', 'message': f"Here is the new markdown: {markdown_content}\n\n{follow_up}"}
-                    self.md_cache[session_id] = markdown_content
+                    follow_up_content = {'role': 'user', 'message': f"Here is the new markdown: {markdown}\n\n{follow_up}"}
+                    self.md_cache[session_id] = markdown
 
                 assistant_content = {'role': 'assistant', 'message': self.format_action(last_action)}
                 # add assistant_content, follow_up_content to the cache
@@ -156,13 +170,24 @@ class DomAnalyzer:
                     if not extracted_response or extracted_response == {}:  # Check if the response is empty
                         raise ValueError("Empty or invlaid response")
 
+                    first_step = extracted_response.get('steps', [{}])[0]  # Safely get the first step
+                    if first_step.get('css_selector', '').find('#') == -1 and first_step.get('action') != 'finish':
+                        raise ValueError("Condition not met: cssSelector does not use ID or action is not 'finish'")
+
                     return extracted_response
+
                 except ValueError as e:
                     attempts += 1
                     last_action = response
-                    formatted = False
+                    # Check the specific error message to set formatted and id_used accordingly
+                    if str(e) == "Condition not met: cssSelector does not use ID or action is not 'finish'":
+                        formatted = True
+                        id_used = False
+                    else:
+                        formatted = False
+                        id_used = True  # Assuming the default state is that IDs are used
                     duplicate = False
-                    logging.info(f"Failed to get response, next attempt#{attempts} ")
+                    logging.info(f"Failed to get response, next attempt#{attempts}: {e}")
                     time.sleep(1)
                     continue  # Retry the loop
                 except Exception as e:
@@ -181,7 +206,7 @@ class DomAnalyzer:
         if not isinstance(action, dict):
             return action
 
-        return f"{{\"action\": \"{action['action']}\", \"css_selector\": \"{action['css_selector']}\", \"Text\": \"{action['text']}\", \"explanation\": \"{action['explanation']}\", \"description\": \"{action['description']}\"}}"
+        return f"{{\"action\": \"{action['action']}\", \"css_selector\": \"{action['css_selector']}\", \"Text\": \"{action.get('text', '')}\", \"explanation\": \"{action.get('explanation', '')}\", \"description\": \"{action.get('description', '')}\"}}"
 
     def variableMap_to_string(self, input_map):
 
@@ -196,7 +221,9 @@ class DomAnalyzer:
         # Remove the last newline character for clean output
         return output_string.rstrip()
 
-    def resolve_follow_up(self, duplicate, valid, formatted,  last_action, executed_actions_str, task, variables_string):
+    def resolve_follow_up(self, duplicate, valid, formatted, id_used, last_action, executed_actions_str, task, variables_string):
+        if id_used is False:
+            return f"Please note that action {last_action} you provided does not use css id, the needed element has an id , can you try again and provide the id as css_selector instead"
         if formatted is False:
             return f"Please note that the last action you provided is not in the required json format, The output format should be {{\"steps\":[{{ \"action\":..,\"css_selector\":...., \"text\":..., \"explanation\":..., \"description\":...}}]}}, if task is achieved return finish action"
 
