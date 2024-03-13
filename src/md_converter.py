@@ -24,12 +24,6 @@ def clean_markdown(markdown):
 
 def convert_to_md(html_doc):
 
-    logging.info('------------------------------------------------')
-    logging.info('------------------------------------------------')
-    logging.info('------------------------------------------------')
-    logging.info('------------------------------------------------')
-    logging.info('------------------------------------------------')
-
     soup = BeautifulSoup(html_doc, 'html.parser')
 
     for script in soup.find_all('script'):

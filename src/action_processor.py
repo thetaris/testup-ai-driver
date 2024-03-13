@@ -92,8 +92,6 @@ class DomAnalyzer:
 
         markdown_content = convert_to_md(html_doc)
 
-        logging.info(f"Markdown: {markdown_content}")
-
         user_input = user_input.replace("@@@markdown@@@", markdown_content)
         system_input = system_input.replace("@@@markdown@@@", markdown_content)
 
