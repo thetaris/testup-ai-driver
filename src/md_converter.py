@@ -56,10 +56,20 @@ def convert_to_md(html_doc):
         if 'id' in tag.attrs:
             desired_attributes.append(f'id="{tag["id"]}"')
 
-        exclude_attrs = {'class', 'style', 'href', 'value', 'target', 'id'}
+        include_attrs = {'aria-label',
+                         'type',
+                         'aria-current',
+                         'aria-hidden',
+                         'value',
+                         'name',
+                         'data-value',
+                         'placeholder',
+                         'role',
+                         'title'
+                         }
 
         for attr, value in tag.attrs.items():
-            if attr not in exclude_attrs:
+            if attr in include_attrs:
                 desired_attributes.append(f'{attr}="{value}"')
 
         # Join the desired attributes into a single string
