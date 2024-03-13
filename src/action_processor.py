@@ -233,7 +233,7 @@ class DomAnalyzer:
         if duplicate is True:
             return f"Please note that the last action you provided is duplicate, I need the next action to perform the task"
 
-        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action to achieve the task: {task} \n You can use the information given by this set of variables to complete your task: {variables_string}"
+        return f"Actions Executed so far are \n {executed_actions_str}\n please provide the next action to achieve the task: {task} or finish action if the task is completed\n You can use the information given by this set of variables to complete your task: {variables_string}"
 
     def cache_response(self, session_id, response):
         self.response_cache[session_id] = response
