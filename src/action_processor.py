@@ -26,7 +26,7 @@ class DomAnalyzer:
     The actions that you can take are:
         1. click (if you need to click something on the screen)
         2. enter_text (if you believe you need to write something)
-        3. scroll (if you are instructed to scroll or scrolling is needed to complete action)
+        3. scroll (this will trigger a function, that scrolls down in the current webpage)
         4. finish (at the end to know that we are done or if all actions have been executed)
         5. error ( the given task cannot be accomplished)
 
@@ -36,7 +36,7 @@ class DomAnalyzer:
         3. text: this is optional and contains the text you want to input in case of an enter-text action. 
         4. explanation: this is why you chose this action.
         5. description: detailed description of the action
-        The output format should be {"steps":[{ "action":..,"css_selector":...., "text":..., "explanation":..., "description":...}]}
+        The output format must be {"steps":[{ "action":..,"css_selector":...., "text":..., "explanation":..., "description":...}]}
     """
 
     user_input_default = """
@@ -44,8 +44,7 @@ class DomAnalyzer:
     \n @@@variables@@@
     """
     markdown_input_default = """
-    \n Here is the Markdown of the page you will be executing the actions on: @@@markdown@@@
-    """
+    \n Here is the Markdown representation of the currently visible section of the page on which you will execute the actions. Please note that you can scroll if you unable to proceed with the task using the available elements: \n @@@markdown@@@"""
 
     def __init__(self, cache_ttl=3600, cache_maxsize=1000):
         self.cache = TTLCache(maxsize=1000, ttl=3600)
@@ -89,7 +88,7 @@ class DomAnalyzer:
                         raise ValueError("Empty or invlaid response")
 
                     first_step = extracted_response.get('steps', [{}])[0]  # Safely get the first step
-                    if first_step.get('css_selector', '').find('#') == -1 and first_step.get('action') != 'finish':
+                    if first_step.get('css_selector', '').find('#') == -1 and first_step.get('action') not in ['finish', 'error', 'scroll']:
                         raise ValueError("Condition not met: cssSelector does not use ID or action is not 'finish'")
 
                     return extracted_response
@@ -113,7 +112,7 @@ class DomAnalyzer:
                 except Exception as e:
                     formatted = True
                     attempts += 1
-                    logging.info(f"Failed to get response, next attempt#{attempts} ")
+                    logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
                     time.sleep(1)
                     continue
             else:
@@ -172,7 +171,7 @@ class DomAnalyzer:
                     continue  # Retry the loop
                 except Exception as e:
                     attempts += 1
-                    logging.info(f"Failed to get response, next attempt#{attempts} ")
+                    logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
                     time.sleep(1)
                     continue
 
@@ -183,10 +182,11 @@ class DomAnalyzer:
         if isinstance(action, str):
             return action
 
-        if not isinstance(action, dict):
-            return action
+        if isinstance(action, dict):
+            return f"{{\"action\": \"{action['action']}\", \"css_selector\": \"{action['css_selector']}\", \"Text\": \"{action['text']}\", \"explanation\": \"{action['explanation']}\", \"description\": \"{action['description']}\"}}"
 
-        return f"{{\"action\": \"{action['action']}\", \"css_selector\": \"{action['css_selector']}\", \"Text\": \"{action.get('text', '')}\", \"explanation\": \"{action.get('explanation', '')}\", \"description\": \"{action.get('description', '')}\"}}"
+        return str(action)
+
 
     def variableMap_to_string(self, input_map):
 
