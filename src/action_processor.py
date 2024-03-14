@@ -40,7 +40,7 @@ class DomAnalyzer:
     """
 
     user_input_default = """
-    \n\nAnd this is your task: @@@task@@@
+    \n\nPerform the task delimited by triple quotes: \"\"\"@@@task@@@\"\"\"
     \n @@@variables@@@
     """
     markdown_input_default = """
@@ -123,10 +123,8 @@ class DomAnalyzer:
                     follow_up_content = [{'role': 'user', 'message': follow_up}]
                     follow_up_content_log = [{'role': 'user', 'message': follow_up}]
                 else:
-                    follow_up_content = [{'role': 'user', 'message': f"Here is the new markdown: {markdown}"},
-                                         {'role': 'user', 'message': follow_up}]
-                    follow_up_content_log = [{'role': 'user', 'message': f"Here is the new markdown: {html_doc}"},
-                                             {'role': 'user', 'message': follow_up}]
+                    follow_up_content = [{'role': 'user', 'message': f"Markdown: {markdown}\n\n{follow_up}"}]
+                    follow_up_content_log = [{'role': 'user', 'message': f"Here is the new markdown: {html_doc}\n\n{follow_up}"}]
                     self.md_cache[session_id] = markdown
 
                 assistant_content = {'role': 'assistant', 'message': self.format_action(last_action)}
@@ -218,8 +216,8 @@ class DomAnalyzer:
                    f" I need the next action to perform the task"
 
         return f"Actions Executed so far are \n {executed_actions_str}\n " \
-               f"please provide the next action to achieve the task:" \
-               f" \"{task}\" or return finish action if the task is completed\n {variables_string}"
+               f"please provide the next action to achieve the task delimited by triple quotes:" \
+               f" \"\"\"{task} or return finish action if the task is completed\"\"\"\n {variables_string}"
 
     def extract_steps(self, json_str):
         try:
