@@ -7,6 +7,7 @@ import action_processor
 import logging
 import time
 from user_exceptions import PromptActionException
+from user_exceptions import SeleniumBrokenLinkException
 from test_steps import TestSteps
 
 
@@ -151,7 +152,7 @@ class SeleniumUtils:
                         accumulated_actions.append(step)
                         index += 1
 
-                        if not(index < response.steps.size and response.steps[index].action == "enter_text"):
+                        if not(0 <= index < len(response.steps) and response.steps[index].action == "enter_text"):
                             break
 
                 except Exception:
@@ -227,7 +228,7 @@ class SeleniumUtils:
         try:
             element = self.driver.find_element(By.CSS_SELECTOR, css_selector)
             element.send_keys(text)
-            logging.info("SELENIUM: entered the following text in the element with the css id: ".css_selector+"    text: "+text)
+            logging.info("SELENIUM: entered the following text in the element with the css id: "+css_selector+"    text: "+text)
         except:
             raise NoSuchElementException("SELENIUM: Could not enter text in the element with the CSS id: "+css_selector)
 

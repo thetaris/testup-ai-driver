@@ -31,9 +31,16 @@ class TestSteps:
         for step_data in steps_data['steps']:
             # Not all steps have 'text', so we use `get` method to avoid KeyError
             text = step_data.get('text', '')  # Defaulting to empty string if 'text' is not present
+
+            # Not all steps have 'explanation', so we use `get` method to avoid KeyError
+            explanation = step_data.get('explanation', '')  # Defaulting to empty string if 'text' is not present
+
+            # Not all steps have 'description', so we use `get` method to avoid KeyError
+            description = step_data.get('description', '')  # Defaulting to empty string if 'text' is not present
+
             css_selector = step_data.get('css_selector', '')  # Defaulting to empty string if 'css_selector' is not present
 
-            step = TestStep(step_data['action'], css_selector, text, step_data['explanation'], step_data['description'])
+            step = TestStep(step_data['action'], css_selector, text, explanation, description)
             self.steps.append(step)
 
     def __str__(self):
