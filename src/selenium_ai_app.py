@@ -25,19 +25,25 @@ def display_start_screen():
 
     # Welcoming message
     welcome_message = """
-    Welcome to TestUp!
+    Welcome to AI Selenium Driver, brought to you by testup.io!
 
-    This application allows you to automate web interactions using natural language commands. You can either run predefined test scripts or use the interactive mode to execute commands on the fly.
+    This tool enhances your web interaction automation, allowing you to control web browsers through natural language. 
+    Whether you're executing predefined scripts or engaging in interactive commands, your approach to web testing and automation is simplified.
 
-    To start:
-    - Choose your mode by entering '--interactive' for interactive mode or '--testscript' for running a test script.
-    - Specify the browser window resolution using '--resolution WIDTHxHEIGHT' (optional, default is 1920x1080).
-    - Specify the website URL to start with using '--url YOUR_WEBSITE_URL'. If not specified, the application will continue with an example website (https://example.com/).
+    Quick Start Guide:
 
-    For any help, type '--help'.
+    1. **Initialization Parameters**:
+       - Browser Resolution: Use '--resolution WIDTHxHEIGHT' to set the window size (default: 1920x1080).
+       - Starting Website: Use '--url YOUR_WEBSITE_URL' to begin on a specific site. Without this, we'll start on https://https://mywebsite.testup.io/ as an example.
+
+    2. **Runtime Interaction**:
+       - Direct Command: Simply type natural language commands to interact with the web page, such as 'buy warm clothing' or 'complete this form with my details: Max Mustermann, Munich, Germany, phone 089/12345678'.
+       - Change Website: Use the 'URL' command to switch sites. You'll be prompted to enter the new website address.
+
+    Start your streamlined web automation journey with us! For further assistance, refer to our documentation or contact support.
     """
 
-    print(ascii_art_testup)
+    #  print(ascii_art_testup)
     print(welcome_message)
 
 

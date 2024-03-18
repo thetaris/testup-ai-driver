@@ -1,3 +1,5 @@
+selenium==4.1.0
+webdriver-manager==3.4.2
 flask
 requests
 beautifulsoup4
