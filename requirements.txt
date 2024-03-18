@@ -1,4 +1,4 @@
-selenium==4.1.0
+selenium
 webdriver-manager==3.4.2
 flask
 requests
