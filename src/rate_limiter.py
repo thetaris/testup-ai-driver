@@ -22,11 +22,11 @@ class RateLimiter:
 
     def add_token_consumed(self, token_consumed):
         with self.lock:
-            logging.info("acquired lock to set tokens")
+            # logging.info("acquired lock to set tokens")
             self.token_count += token_consumed
 
     def check_and_update_limits(self):
-        logging.info("Going to wait and check once")
+        # logging.info("Going to wait and check once")
         current_time = time.time()
         elapsed_time = current_time - self.window_start
 
@@ -41,10 +41,10 @@ class RateLimiter:
 
     def wait_and_check(self):
         with self.lock:
-            logging.info("acquired lock for availability")
+            # logging.info("acquired lock for availability")
             allowed = self.check_and_update_limits()
             while not allowed:
-                logging.info("waiting for tokens to be available")
+                # logging.info("waiting for tokens to be available")
                 time.sleep(1)
                 allowed = self.check_and_update_limits()
             return True

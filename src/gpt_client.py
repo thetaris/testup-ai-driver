@@ -24,12 +24,12 @@ class GptClient:
 
     def make_request(self, contents):
         if self.rate_limiter.wait_and_check():
-            logging.info("Going to make request")
+            # logging.info("Going to make request")
             api_info = api_map_json[self.gpt_model]
             payload = api_info['payload'](self.gpt_model, contents)
-            logging.info("##############################################################################################################")
-            logging.info(f"sending:  {contents}")
-            logging.info("##############################################################################################################")
+            # logging.info("##############################################################################################################")
+            # logging.info(f"sending:  {contents}")
+            # logging.info("##############################################################################################################")
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.gpt_api_key}"
@@ -43,7 +43,7 @@ class GptClient:
     def extract_response(self, response):
         response_data = response.json()
 
-        logging.info(f"Response from openai {response_data}")
+        # logging.info(f"Response from openai {response_data}")
 
         response_object_type = response_data.get('object', '')
 
@@ -67,11 +67,11 @@ class GptClient:
             except json.JSONDecodeError:
                 raise Exception("Error decoding the extracted content as JSON.")
 
-            logging.info(f"Tokens: {total_tokens}")
+            # logging.info(f"Tokens: {total_tokens}")
             # Store in new JSON object
-            logging.info("##############################################################################################################")
-            logging.info(f"Returning: {assistant_message}")
-            logging.info("##############################################################################################################")
+            # logging.info("##############################################################################################################")
+            # logging.info(f"Returning: {assistant_message}")
+            # logging.info("##############################################################################################################")
             return assistant_message
         else:
             raise Exception(f"No content found in response or invalid response format:{response_data}")
