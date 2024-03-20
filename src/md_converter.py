@@ -13,7 +13,6 @@ def clean_markdown(markdown):
     cleaned_markdown = re.sub(r'!\[[^\]]*\]\(data:image\/[a-zA-Z]+;base64,[^\)]+\)', '', markdown)
 
     # Remove CSS styles - targeting patterns that start with a period or within style tags
-    cleaned_markdown = re.sub(r'\.[\s\S]*?\{[\s\S]*?\}', '', cleaned_markdown)
     cleaned_markdown = re.sub(r'<style>[\s\S]*?<\/style>', '', cleaned_markdown)
 
     # Remove excessive whitespace
@@ -79,7 +78,7 @@ def convert_to_md(html_doc):
         tag.replace_with(f'<{tag.name}.postfix {attributes_str}>{tag.get_text()}</{tag.name}>')
 
     # Convert the modified HTML to Markdown
-    markdown = md(str(soup), strip=[])
+    markdown = md(str(soup), strip=['span'])
     markdown = re.sub(r'(\w+)\.postfix', r'\1', markdown)
     markdown = re.sub('\\s+', ' ', markdown)
     markdown = markdown.replace('\\_', '_')
