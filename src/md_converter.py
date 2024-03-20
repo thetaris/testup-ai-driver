@@ -79,7 +79,7 @@ def convert_to_md(html_doc):
         tag.replace_with(f'<{tag.name}.postfix {attributes_str}>{tag.get_text()}</{tag.name}>')
 
     # Convert the modified HTML to Markdown
-    markdown = md(str(soup), strip=['span'])
+    markdown = md(str(soup), strip=[])
     markdown = re.sub(r'(\w+)\.postfix', r'\1', markdown)
     markdown = re.sub('\\s+', ' ', markdown)
     markdown = markdown.replace('\\_', '_')
