@@ -23,10 +23,25 @@ def process_prompt(session_id):
     last_action = data.get("last_action")
     variable_map_str = dom_analyzer.variableMap_to_string(variable_map)
     analysis_result = dom_analyzer.get_actions(session_id, user_prompt, html_doc, actions_executed, variable_map_str, duplicate, valid, last_action)
-    print(analysis_result)
+    if check_action_status(analysis_result):
+        dom_analyzer.print_prompt(session_id)
+        logging.info(f"Returning: {analysis_result}")
 
     return jsonify(analysis_result)
 
+def check_action_status(data):
+    # Check if 'steps' key exists and is a list
+    if 'steps' in data and isinstance(data['steps'], list):
+        # Iterate through each step in the 'steps' list
+        for step in data['steps']:
+            # Use .get() to safely get 'action', defaulting to None if not found
+            action_value = step.get('action', None)
+
+            # Check if action_value is "error" or "finish"
+            if action_value in ['error', 'finish']:
+                return True
+    # Return False if no action is "error" or "finish", or if 'steps' is not as expected
+    return False
 
 
 if __name__ == '__main__':

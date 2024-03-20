@@ -1,6 +1,6 @@
 from md_converter import convert_to_md
 from cachetools import TTLCache
-from gpt_client import GptClient
+from gpt_client import GptClient, TokenLimitExceededError, RateLimitExceededError
 import re
 import logging
 import time
@@ -106,9 +106,19 @@ class DomAnalyzer:
                         formatted = False
                         id_used = True  # Assuming the default state is that IDs are used
                     duplicate = False
-                    logging.info(f"Failed to get response, next attempt#{attempts}: {e}")
+                    # logging.info(f"Failed to get response, next attempt#{attempts}: {e}")
                     time.sleep(1)
                     continue  # Retry the loop
+                except TokenLimitExceededError as e:
+                    logging.error(f"Failed: {e} ")
+                    break
+                except RateLimitExceededError as e:
+                    logging.error(f"Failed with rate limit exceeded: {e} "
+                                  f"\n going to sleep for 10 seconds and try again")
+                    formatted = True
+                    attempts += 1
+                    time.sleep(10)
+                    continue
                 except Exception as e:
                     formatted = True
                     attempts += 1
@@ -139,11 +149,6 @@ class DomAnalyzer:
 
                     extracted_response = self.extract_steps(response)
 
-                    # logging.info("----------------------------------------"
-                    #              "-----------------------------------------------")
-                    # logging.info(f"history: {self.log_cache[session_id]}")
-                    # logging.info("----------------------------------------"
-                    #              "-----------------------------------------------")
                     if not extracted_response or extracted_response == {}:
                         raise ValueError("Empty or invalid response")
 
@@ -164,14 +169,26 @@ class DomAnalyzer:
                         formatted = False
                         id_used = True  # Assuming the default state is that IDs are used
                     duplicate = False
-                    logging.info(f"Failed to get response, next attempt#{attempts}: {e}")
+                    # logging.info(f"Failed to get response, next attempt#{attempts}: {e}")
                     time.sleep(1)
                     continue  # Retry the loop
+
+                except RateLimitExceededError as e:
+                    logging.error(f"Failed with rate limit exceeded: {e} "
+                                  f"\n going to sleep for 10 seconds and try again")
+                    formatted = True
+                    attempts += 1
+                    time.sleep(10)
+                    continue
+
                 except Exception as e:
                     attempts += 1
                     logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
+
                     time.sleep(1)
                     continue
+
+        return {"steps": [{"action": "Error", "text": "Failed to get action"}]}
 
     def format_action(self, action):
         if action is None:
@@ -251,3 +268,13 @@ class DomAnalyzer:
                 continue
         logging.info("Unable to parse JSON structure from the message")
         return {}
+
+    def print_prompt(self, session_id):
+        logging.info("###########################################"
+                     "###########################################")
+        logging.info(f"actual: {self.cache[session_id]}")
+        logging.info("###########################################"
+                     "###########################################")
+        logging.info(f"history: {self.log_cache[session_id]}")
+        logging.info("###########################################"
+                     "###########################################")

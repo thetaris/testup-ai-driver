@@ -24,12 +24,12 @@ class GptClient:
 
     def make_request(self, contents):
         if self.rate_limiter.wait_and_check():
-            logging.info("Going to make request")
+            # logging.info("Going to make request")
             api_info = api_map_json[self.gpt_model]
             payload = api_info['payload'](self.gpt_model, contents)
-            logging.info("##############################################################################################################")
-            logging.info(f"sending:  {contents}")
-            logging.info("##############################################################################################################")
+            # logging.info("##############################################################################################################")
+            # logging.info(f"sending:  {contents}")
+            # logging.info("##############################################################################################################")
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.gpt_api_key}"
@@ -67,12 +67,25 @@ class GptClient:
             except json.JSONDecodeError:
                 raise Exception("Error decoding the extracted content as JSON.")
 
-            logging.info(f"Tokens: {total_tokens}")
+            # logging.info(f"Tokens: {total_tokens}")
             # Store in new JSON object
-            logging.info("##############################################################################################################")
-            logging.info(f"Returning: {assistant_message}")
-            logging.info("##############################################################################################################")
+            # logging.info("##############################################################################################################")
+            # logging.info(f"Returning: {assistant_message}")
+            # logging.info("##############################################################################################################")
             return assistant_message
+        elif "error" in response_data and response_data["error"].get("code", "") == 'context_length_exceeded':
+            raise TokenLimitExceededError(response_data["error"].get("message", "Token limit exceeded"))
+        elif "error" in response_data and response_data["error"].get("code", "") == 'rate_limit_exceeded':
+            raise RateLimitExceededError(response_data["error"].get("message", "Rate limit exceeded"))
         else:
             raise Exception(f"No content found in response or invalid response format:{response_data}")
 
+
+class TokenLimitExceededError(Exception):
+    """GPT token limit exceeded"""
+    pass
+
+
+class RateLimitExceededError(Exception):
+    """GPT token limit exceeded"""
+    pass

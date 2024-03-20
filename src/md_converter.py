@@ -13,7 +13,6 @@ def clean_markdown(markdown):
     cleaned_markdown = re.sub(r'!\[[^\]]*\]\(data:image\/[a-zA-Z]+;base64,[^\)]+\)', '', markdown)
 
     # Remove CSS styles - targeting patterns that start with a period or within style tags
-    cleaned_markdown = re.sub(r'\.[\s\S]*?\{[\s\S]*?\}', '', cleaned_markdown)
     cleaned_markdown = re.sub(r'<style>[\s\S]*?<\/style>', '', cleaned_markdown)
 
     # Remove excessive whitespace
