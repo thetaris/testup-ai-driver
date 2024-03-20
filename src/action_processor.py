@@ -153,7 +153,7 @@ class DomAnalyzer:
                         raise ValueError("Empty or invalid response")
 
                     first_step = extracted_response.get('steps', [{}])[0]  # Safely get the first step
-                    if first_step.get('css_selector', '').find('#') == -1 and first_step.get('action') != 'finish':
+                    if first_step.get('css_selector', '').find('#') == -1 and first_step.get('action') not in ['finish', 'error', 'scroll']:
                         raise ValueError("Condition not met: cssSelector does not use ID or action is not 'finish'")
 
                     return extracted_response
