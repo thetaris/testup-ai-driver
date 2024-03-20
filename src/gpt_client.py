@@ -43,7 +43,7 @@ class GptClient:
     def extract_response(self, response):
         response_data = response.json()
 
-        # logging.info(f"Response from openai {response_data}")
+        logging.info(f"Response from openai {response_data}")
 
         response_object_type = response_data.get('object', '')
 
@@ -73,6 +73,19 @@ class GptClient:
             # logging.info(f"Returning: {assistant_message}")
             # logging.info("##############################################################################################################")
             return assistant_message
+        elif "error" in response_data and response_data["error"].get("code", "") == 'context_length_exceeded':
+            raise TokenLimitExceededError(response_data["error"].get("message", "Token limit exceeded"))
+        elif "error" in response_data and response_data["error"].get("code", "") == 'rate_limit_exceeded':
+            raise RateLimitExceededError(response_data["error"].get("message", "Rate limit exceeded"))
         else:
             raise Exception(f"No content found in response or invalid response format:{response_data}")
 
+
+class TokenLimitExceededError(Exception):
+    """GPT token limit exceeded"""
+    pass
+
+
+class RateLimitExceededError(Exception):
+    """GPT token limit exceeded"""
+    pass
