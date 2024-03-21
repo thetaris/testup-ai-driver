@@ -28,7 +28,7 @@ try:
 
     mySelenium.execute_prompt("""search for a used ps4 game "assassins creed" """)
 
-    mySelenium.execute_prompt("""add product to watchlist""")
+    mySelenium.execute_prompt("""go to the product page""")
     # Find the element
     input_element = mySelenium.driver.find_element(By.CLASS_NAME, 'input-text.qty.text')
     # Get the value attribute
