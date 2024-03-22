@@ -238,7 +238,7 @@ class DomAnalyzer:
 
         return f"Actions Executed so far are \n {executed_actions_str}\n " \
                f"please provide the next action to achieve the task delimited by triple quotes:" \
-               f" \"\"\"{task}\n return finish action if the task is completed\n \"\"\"\n{variables_string}"
+               f" \"\"\"{task} or return finish action if the task is completed\"\"\"\n {variables_string}"
 
     def extract_steps(self, json_str):
         try:
