@@ -26,9 +26,10 @@ class DomAnalyzer:
     The actions that you can take are:
         1. click (if you need to click something on the screen)
         2. enter_text (if you believe you need to write something)
-        3. scroll (this will trigger a function, that scrolls down in the current webpage, use this function when you fail to find item to explore the page further)
-        4. finish (at the end to know that we are done or if all actions have been executed)
-        5. error ( the given task cannot be accomplished)
+        3. key_enter ( after enter_text action in search to apply the search)
+        4. scroll (this will trigger a function, that scrolls down in the current webpage, use this function when you fail to find item to explore the page further) 
+        5. finish (at the end to know that we are done or if all actions have been executed)
+        6. error ( the given task cannot be accomplished)
 
      Each entry is an object of 5 fields, the fields are the following:
         1. action: can be one of: click, enter_text, wait, error, or finish.
@@ -127,14 +128,17 @@ class DomAnalyzer:
                     continue
             else:
                 executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
-                follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
+
                 if markdown == self.md_cache[session_id]:
+                    follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
                     follow_up_content = [{'role': 'user', 'message': follow_up}]
                     follow_up_content_log = [{'role': 'user', 'message': follow_up}]
                 else:
+                    follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
                     follow_up_content = [{'role': 'user', 'message': f"Markdown: {markdown}\n\n{follow_up}"}]
                     follow_up_content_log = [{'role': 'user', 'message': f"Here is the new markdown: {html_doc}\n\n{follow_up}"}]
                     self.md_cache[session_id] = markdown
+                    logging.info(f"New markdown: {markdown}")
 
                 assistant_content = {'role': 'assistant', 'message': self.format_action(last_action)}
                 # add assistant_content, follow_up_content to the cache
@@ -216,7 +220,7 @@ class DomAnalyzer:
         # Remove the last newline character for clean output
         return output_string.rstrip()
 
-    def resolve_follow_up(self, duplicate, valid, formatted, id_used, last_action, executed_actions_str, task, variables_string):
+    def resolve_follow_up(self, duplicate, valid, formatted, id_used, last_action,  executed_actions_str, task, variables_string):
         if id_used is False:
             return f"Please note that action {last_action} you provided does not use css id, the needed element has an id," \
                    f" can you try again and provide the id as css_selector instead"
@@ -234,7 +238,7 @@ class DomAnalyzer:
 
         return f"Actions Executed so far are \n {executed_actions_str}\n " \
                f"please provide the next action to achieve the task delimited by triple quotes:" \
-               f" \"\"\"{task} or return finish action if the task is completed\"\"\"\n {variables_string}"
+               f" \"\"\"{task}\n return finish action if the task is completed\n return scroll action if you cannot find an item\"\"\"\n{variables_string}"
 
     def extract_steps(self, json_str):
         try:
@@ -275,6 +279,6 @@ class DomAnalyzer:
         logging.info(f"actual: {self.cache[session_id]}")
         logging.info("###########################################"
                      "###########################################")
-        logging.info(f"history: {self.log_cache[session_id]}")
-        logging.info("###########################################"
-                     "###########################################")
+        # logging.info(f"history: {self.log_cache[session_id]}")
+        # logging.info("###########################################"
+        #              "###########################################")
