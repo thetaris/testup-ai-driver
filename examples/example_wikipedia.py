@@ -3,7 +3,7 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium_utils import SeleniumUtils  # Assuming this is a custom module
+from selenium_ai_utils import SeleniumAiUtils  # Assuming this is a custom module
 
 
 def setup_driver():
@@ -34,7 +34,7 @@ def check_wikipedia_page_title(driver, expected_title):
 def main():
     driver = setup_driver()
     url = "https://wikipedia.com/"
-    mySelenium = SeleniumUtils()
+    mySelenium = SeleniumAiUtils()
 
     try:
         mySelenium.set_local_driver(driver, url)

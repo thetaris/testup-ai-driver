@@ -54,6 +54,20 @@ You can set these variables in your environment or through a `.env` file in the 
 
 ## Usage
 
+### Interactive Mode
+
+This mode allows real-time natural language commands for web application interaction. Users can change URLs, navigate, click, input data, and exit as needed.
+To start using the tool:
+
+1. Run the app:
+   ```bash
+   python selenium_ai_app.py
+   ```
+
+### Example Test Script
+
+Refer to `example_testup_mywebshop.py`,  for an automation script example. It illustrates adding a product to a shopping cart and checking out, ensuring each step functions as expected.
+
 To start using the tool:
 
 1. Open and customize `example_testup_mywebshop.py` to fit your test scenario.
@@ -65,9 +79,6 @@ To start using the tool:
 The script initiates a browser session, performs the defined actions, and automatically closes the browser upon completion or error.
 
 
-## Example Test Script
-
-Refer to `example_testup_mywebshop.py`,  for an automation script example. It illustrates adding a product to a shopping cart and checking out, ensuring each step functions as expected.
 
 
 ## Customizing Test Scripts
@@ -79,17 +90,3 @@ Adapt `example_testup_mywebshop.py` or create new scripts using the `SeleniumUti
 
 Contributions are welcome! Fork the repository, make your changes, and submit a pull request.
 
-
-## Additional Features
-
-### Interactive Mode
-
-This mode allows real-time natural language commands for web application interaction. Users can change URLs, navigate, click, input data, and exit as needed.
-
-### Command Line Arguments
-
-Customize your testing session with command-line arguments for browser resolution and initial website URL, providing a tailored testing experience.
-
-## Getting Started
-
-To utilize these features, follow the above installation and usage guidelines. Designed for ease of use, this tool brings web testing within reach of users at all technical levels.

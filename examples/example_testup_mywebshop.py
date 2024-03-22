@@ -3,7 +3,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
-from selenium_utils import SeleniumUtils  # Assuming this is a custom module
+from selenium_ai_utils import SeleniumAiUtils  # Assuming this is a custom module
 
 
 # Setup
@@ -21,7 +21,7 @@ def main():
     driver = setup_driver()
 
     try:
-        selenium_utils = SeleniumUtils()
+        selenium_utils = SeleniumAiUtils()
         selenium_utils.set_local_driver(driver, url)
 
         # Test steps
