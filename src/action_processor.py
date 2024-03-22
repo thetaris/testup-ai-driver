@@ -27,7 +27,7 @@ class DomAnalyzer:
         1. click (if you need to click something on the screen)
         2. enter_text (if you believe you need to write something)
         3. key_enter ( after enter_text action in search to apply the search)
-        4. scroll (this will trigger a function, that scrolls down in the current webpage, use this function when you fail to find item to explore the page further) 
+        4. scroll (this will trigger a function, that scrolls down in the current webpage) 
         5. finish (at the end to know that we are done or if all actions have been executed)
         6. error ( the given task cannot be accomplished)
 
