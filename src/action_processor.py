@@ -123,7 +123,7 @@ class DomAnalyzer:
                 except Exception as e:
                     formatted = True
                     attempts += 1
-                    logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
+                    # logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
                     time.sleep(1)
                     continue
             else:
@@ -138,7 +138,7 @@ class DomAnalyzer:
                     follow_up_content = [{'role': 'user', 'message': f"Markdown: {markdown}\n\n{follow_up}"}]
                     follow_up_content_log = [{'role': 'user', 'message': f"Here is the new markdown: {html_doc}\n\n{follow_up}"}]
                     self.md_cache[session_id] = markdown
-                    logging.info(f"New markdown: {markdown}")
+                    # logging.info(f"New markdown: {markdown}")
 
                 assistant_content = {'role': 'assistant', 'message': self.format_action(last_action)}
                 # add assistant_content, follow_up_content to the cache
@@ -187,7 +187,7 @@ class DomAnalyzer:
 
                 except Exception as e:
                     attempts += 1
-                    logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
+                    # logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
 
                     time.sleep(1)
                     continue
@@ -274,11 +274,11 @@ class DomAnalyzer:
         return {}
 
     def print_prompt(self, session_id):
-        logging.info("###########################################"
-                     "###########################################")
-        logging.info(f"actual: {self.cache[session_id]}")
-        logging.info("###########################################"
-                     "###########################################")
-        # logging.info(f"history: {self.log_cache[session_id]}")
         # logging.info("###########################################"
         #              "###########################################")
+        # logging.info(f"actual: {self.cache[session_id]}")
+        logging.info("###########################################"
+                     "###########################################")
+        logging.info(f"history: {self.log_cache[session_id]}")
+        logging.info("###########################################"
+                     "###########################################")
