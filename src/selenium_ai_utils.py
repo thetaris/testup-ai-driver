@@ -12,7 +12,7 @@ from test_steps import TestSteps
 
 
 
-class SeleniumUtils:
+class SeleniumAiUtils:
     DRIVER_TIMEOUT_SECONDS = 120
     EMPTY_HTML_DOCUMENT = "<html><head></head><body></body></html>"
 

@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium_utils import SeleniumUtils  # Make sure this is correctly imported
+from selenium_ai_utils import SeleniumAiUtils  # Make sure this is correctly imported
 import re
 import argparse
 
@@ -38,7 +38,8 @@ def display_start_screen():
 
     2. **Runtime Interaction**:
        - Direct Command: Simply type natural language commands to interact with the web page, such as 'buy warm clothing' or 'complete this form with my details: Max Mustermann, Munich, Germany, phone 089/12345678'.
-       - Change Website: Use the 'URL' command to switch sites. You'll be prompted to enter the new website address.
+       - Change Website: Use the '/URL' command to switch sites. You'll be prompted to enter the new website address.
+       - Type '/exit' '/q' or '/quit' to quit:"
 
     Start your streamlined web automation journey with us! For further assistance, refer to our documentation or contact support.
     """
@@ -47,22 +48,56 @@ def display_start_screen():
     print(welcome_message)
 
 
+def display_help_message():
+    help_message = """
+    Available Commands:
+    - /URL [website] : Switch to a specific website. You can directly use '/URL website.com' or just '/URL' and then input the URL when prompted.
+    - /exit, /q, /quit : Quit the interactive mode.
+    - /help : Display this help message.
+
+    How to Use:
+    When you input commands, the AI processes your text and decides on an action: click, enter text, scroll, press enter, or finish. These actions are automatically executed on the webpage via the Selenium WebDriver, and you will see the changes directly in the browser.
+
+    Example Commands:
+    - "Click on the login button": The AI will attempt to find and click a login button on the current page.
+    - "Enter 'John Doe' in the name field": The AI will look for a name field and enter the text 'John Doe'.
+    - "Scroll down": The AI will scroll the webpage down.
+    - "Press enter in the search box": The AI will simulate pressing the Enter key in a search box.
+    - "Complete the form and submit": The AI will try to fill out a form with previously provided details and submit it.
+
+    Command Tips:
+    - Be Clear and Specific: Describe exactly what you want to do. Include any necessary details.
+    - Use Natural Language: Phrase your commands in a straightforward manner, as if you were asking another person to perform the task.
+    - Provide Context: If your command depends on previous actions or certain conditions, make sure to include that context in your request.
+
+    """
+    print(help_message)
+
+
 def run_interactive_mode(selenium_utils):
-    print("Interactive mode. Type 'URL' to switch the website, or ('exit','q' or 'quit') to quit:")
+    print("Interactive mode. Type '/URL' to switch the website, or ('/exit','/q' or '/quit') to quit:")
 
     while True:
         # Prompt the user for input
         user_input = input("> ").strip()
 
+        # Check for help command
+        if user_input.lower() == '/help':
+            display_help_message()
+            continue
+
         # Check if the user wants to exit the interactive mode
-        if user_input.lower() in ['exit', 'quit', 'q']:
+        if user_input.lower() in ['/exit', '/quit', '/q']:
             print("Exiting interactive mode. Goodbye!")
-            selenium_utils.close_local_driver()
             break
 
+        split_input = user_input.split(' ')
         # Handle URL change request
-        if user_input.lower() == 'url':
-            new_url = input("Enter the new URL: ").strip()
+        if split_input[0].lower() == '/url':
+            if len(split_input) == 2:
+                new_url = split_input[1]
+            else:
+                new_url = input("Enter the new URL: ").strip()
             original_new_url = new_url  # Store the original input for user feedback
             # Automatically prepend 'http://' if necessary
             if not new_url.startswith(('http://', 'https://')):
@@ -135,7 +170,7 @@ def main():
 
     driver = webdriver.Chrome(options=chrome_options)
     url = "https://mywebsite.testup.io/"
-    selenium_utils = SeleniumUtils()
+    selenium_utils = SeleniumAiUtils()
     selenium_utils.set_local_driver(driver, url)
 
     run_interactive_mode(selenium_utils)
