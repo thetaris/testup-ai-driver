@@ -100,6 +100,50 @@ for AI-driven Selenium interactions and the `execute_prompt` method for AI-drive
 and actions.
 
 
+# Model Fine-Tuning
+Fine-tuning a model requires preparing your data in a specific format, this section guides you through the process of preparing your data by converting HTML content to Markdown, which is a preferred format for text-based machine learning tasks due to its simplicity, readability and reduced size.
+
+## Preparing Your Data
+Before fine-tuning your model , you need to convert your HTML-based data into Markdown. This ensures that the model trains on data that is in a clean, standardized format.
+
+## Prerequisites
+- Python3 installed on your system
+- Input data in JSON format, containing structured HTML content
+
+## Input Data Format
+Your input files should be in JSON format, with each file containing an array fo messages. Each message has content which could contain HTML that needs to be converted to Markdown. An Example of the input format is provided below:
+
+   ```json
+   {
+     "messages": [
+       {
+         "role": "system",
+         "content": "Structured HTML content here..."
+       },
+       {
+         "role": "user",
+         "content": "HTML content to be converted to Markdown..."
+       }
+     ]
+   }
+
+   ```
+
+
+## HTML to Markdown Conversion
+- **Place Input Files:** Copy your input JSON files into the `data/input` directory. This script is designed to process all files in this directory.
+- **Execute the Conversion Script:** Run the script from the root directory of your project. Use the following command:
+   ```bash
+   python scripts/prepare_training_data.py
+  ```
+- **Collect the Converted Files:** After the script has finished running, find the converted Markdown files in the `data/output` directory. Each file is named according to its corresponding input file with an addition `_md` postfix to indicate the conversion.
+
+## Post-conversion
+Once your data is in Markdown format , you can proceed with the fine-tuning process. This standardized format will help ensure better model performance by training on data that is cleaner and more uniform.
+
+
+
 ## Contributing
 
 Contributions are welcome! Fork the repository, make your changes, and submit a pull request.
+
