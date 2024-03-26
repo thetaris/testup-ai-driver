@@ -1,7 +1,10 @@
 
-# AI-Based Website Testing Tool
+# Selenium AI driver
 
 This project introduces an AI-driven tool to automate website testing through Selenium. By harnessing the power of natural language instructions and Selenium's comprehensive browser automation capabilities, it simplifies executing complex test scenarios on web applications. From adding products to shopping carts and navigating through pages to verifying webpage elements, this tool makes web testing accessible and efficient.
+
+This tool is brought to you by [testup.io](https://testup.io),
+the easist no-code test automation tool on the web.
 
 ## Features
 
@@ -9,6 +12,7 @@ This project introduces an AI-driven tool to automate website testing through Se
 - **Automatic ID generation** Ids are added to all DOM elements to ensure back and forth communication with the AI model.
 - **Conversation context** The model may use repeated requests to inform the AI about the result of its actions to make sure that the entire task can be completed.
 - **Selenium wrapper**: The `SeleniumAIUtils` class wraps the Selenium WebDriver and offers the additional AI functions.
+- **Training data**: By running parameter fine tuning against our sample data you can significantly increase the accuracy of the results.
 
 ## Usage
 
