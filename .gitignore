@@ -23,6 +23,12 @@ dist/
 target/
 dist/
 
+#output
+data/output/*
+
+# Deployment
+deployment.yaml
+
 # JetBrains IDE
 .idea/
 
