@@ -166,7 +166,6 @@ def main():
     # Setup Chrome options
     chrome_options = Options()
     chrome_options.add_argument(f"window-size={args.resolution}")
-    chrome_options.add_argument("--start-fullscreen")  # This line ensures full screen mode
 
     driver = webdriver.Chrome(options=chrome_options)
     url = "https://mywebsite.testup.io/"

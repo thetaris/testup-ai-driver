@@ -11,7 +11,6 @@ def setup_driver():
     chrome_options = Options()
     # chrome_options.add_argument("--headless")  # Uncomment for headless mode
     # chrome_options.add_argument("window-size=1920x1080")  # Set specific resolution
-    chrome_options.add_argument("--start-fullscreen")  # Start in fullscreen mode
 
     return webdriver.Chrome(options=chrome_options)
 

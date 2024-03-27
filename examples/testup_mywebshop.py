@@ -11,7 +11,6 @@ def setup_driver():
     """Initialize and configure the Chrome WebDriver."""
     chrome_options = Options()
     # chrome_options.add_argument("--headless")  # Uncomment to enable headless mode
-    chrome_options.add_argument("--start-fullscreen")  # Start in fullscreen mode
     driver = webdriver.Chrome(options=chrome_options)
     return driver
 
