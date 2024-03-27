@@ -2,6 +2,21 @@ node_modules/
 dist/
 *.py[cod]
 *.log
+
+# Package files
+*.jar
+
+# Maven
+target/
+dist/
+
+#output
+data/output/*
+
+# Deployment
+deployment.yaml
+
+# JetBrains IDE
 .idea/
 
 .DS_Store

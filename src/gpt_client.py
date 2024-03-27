@@ -27,9 +27,9 @@ class GptClient:
             # logging.info("Going to make request")
             api_info = api_map_json[self.gpt_model]
             payload = api_info['payload'](self.gpt_model, contents)
-            # logging.info("##############################################################################################################")
-            # logging.info(f"sending:  {contents}")
-            # logging.info("##############################################################################################################")
+            logging.info("##############################################################################################################")
+            logging.info(f"sending:  {contents}")
+            logging.info("##############################################################################################################")
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.gpt_api_key}"

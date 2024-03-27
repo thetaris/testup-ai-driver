@@ -26,9 +26,10 @@ class DomAnalyzer:
     The actions that you can take are:
         1. click (if you need to click something on the screen)
         2. enter_text (if you believe you need to write something)
-        3. scroll (this will trigger a function, that scrolls down in the current webpage)
-        4. finish (at the end to know that we are done or if all actions have been executed)
-        5. error ( the given task cannot be accomplished)
+        3. key_enter ( after enter_text action in search to apply the search)
+        4. scroll (this will trigger a function, that scrolls down in the current webpage) 
+        5. finish (at the end to know that we are done or if all actions have been executed)
+        6. error ( the given task cannot be accomplished)
 
      Each entry is an object of 5 fields, the fields are the following:
         1. action: can be one of: click, enter_text, wait, error, or finish.
@@ -74,14 +75,14 @@ class DomAnalyzer:
 
         while attempts < max_retries:
             if session_id not in self.cache:
-                system_content = {'role': 'system', 'message': system_input}
-                markdown_content = {'role': 'user', 'message': markdown_input}
-                user_content = {'role': 'user', 'message': user_input}
+                system_content = {'role': 'system', 'message': system_input, 'removable': False}
+                markdown_content = {'role': 'user', 'message': markdown_input, 'removable': False}
+                user_content = {'role': 'user', 'message': user_input, 'removable': False}
 
                 try:
                     response = self.gpt_client.make_request([system_content, markdown_content, user_content])
                     self.cache[session_id] = [system_content, markdown_content, user_content]
-                    self.log_cache[session_id] = [system_content, {'role': 'user', 'message': html_doc}, user_content]
+                    self.log_cache[session_id] = [system_content, {'role': 'user', 'message': html_doc, 'removable': False}, user_content]
                     self.md_cache[session_id] = markdown
                     extracted_response = self.extract_steps(response)
                     if not extracted_response or extracted_response == {}:  # Check if the response is empty
@@ -111,6 +112,8 @@ class DomAnalyzer:
                     continue  # Retry the loop
                 except TokenLimitExceededError as e:
                     logging.error(f"Failed: {e} ")
+                    if self.clean_prompt(self.cache[session_id]):
+                        continue
                     break
                 except RateLimitExceededError as e:
                     logging.error(f"Failed with rate limit exceeded: {e} "
@@ -122,21 +125,30 @@ class DomAnalyzer:
                 except Exception as e:
                     formatted = True
                     attempts += 1
-                    logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
+                    # logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
                     time.sleep(1)
                     continue
             else:
                 executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
-                follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
+
                 if markdown == self.md_cache[session_id]:
-                    follow_up_content = [{'role': 'user', 'message': follow_up}]
+                    follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
+                    if not id_used or not formatted:
+                        follow_up_content = [{'role': 'user', 'message': follow_up, 'removable': True}]
+                    else:
+                        follow_up_content = [{'role': 'user', 'message': follow_up, 'removable': False}]
                     follow_up_content_log = [{'role': 'user', 'message': follow_up}]
                 else:
-                    follow_up_content = [{'role': 'user', 'message': f"Markdown: {markdown}\n\n{follow_up}"}]
+                    follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
+                    follow_up_content = [{'role': 'user', 'message': f"Markdown: {markdown}\n\n{follow_up}", 'removable': False}]
                     follow_up_content_log = [{'role': 'user', 'message': f"Here is the new markdown: {html_doc}\n\n{follow_up}"}]
                     self.md_cache[session_id] = markdown
 
-                assistant_content = {'role': 'assistant', 'message': self.format_action(last_action)}
+                # check if prompt is a result of retry, clean up
+                if not id_used or not formatted:
+                    assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': True}
+                else:
+                    assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': False}
                 # add assistant_content, follow_up_content to the cache
 
                 try:
@@ -172,7 +184,11 @@ class DomAnalyzer:
                     # logging.info(f"Failed to get response, next attempt#{attempts}: {e}")
                     time.sleep(1)
                     continue  # Retry the loop
-
+                except TokenLimitExceededError as e:
+                    logging.error(f"Failed: {e} ")
+                    if self.clean_prompt(self.cache[session_id]):
+                        continue
+                    break
                 except RateLimitExceededError as e:
                     logging.error(f"Failed with rate limit exceeded: {e} "
                                   f"\n going to sleep for 10 seconds and try again")
@@ -183,7 +199,7 @@ class DomAnalyzer:
 
                 except Exception as e:
                     attempts += 1
-                    logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
+                    # logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
 
                     time.sleep(1)
                     continue
@@ -216,7 +232,7 @@ class DomAnalyzer:
         # Remove the last newline character for clean output
         return output_string.rstrip()
 
-    def resolve_follow_up(self, duplicate, valid, formatted, id_used, last_action, executed_actions_str, task, variables_string):
+    def resolve_follow_up(self, duplicate, valid, formatted, id_used, last_action,  executed_actions_str, task, variables_string):
         if id_used is False:
             return f"Please note that action {last_action} you provided does not use css id, the needed element has an id," \
                    f" can you try again and provide the id as css_selector instead"
@@ -275,6 +291,18 @@ class DomAnalyzer:
         logging.info(f"actual: {self.cache[session_id]}")
         logging.info("###########################################"
                      "###########################################")
-        logging.info(f"history: {self.log_cache[session_id]}")
-        logging.info("###########################################"
-                     "###########################################")
+
+    def clean_prompt(self, prompt_history):
+        # going to delete the first removable assistant/user prompt
+        logging.info("Going to clean prompt history")
+        if len(prompt_history) < 2:
+            logging.info("History is less than 2 objects, will not attempt to clear")
+
+        for i in range(len(prompt_history) - 1):
+            if (prompt_history[i]['role'] == 'assistant' and prompt_history[i + 1]['role'] == 'user'
+                 and prompt_history[i]['removable'] is True and prompt_history[i + 1]['removable'] is True):
+                logging.info(f"Going to delete [{prompt_history[i]},\n{prompt_history[i + 1]}]")
+                del prompt_history[i:i+2]
+                return True
+        logging.info("Was not able to find removable items")
+        return False
