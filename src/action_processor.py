@@ -140,7 +140,7 @@ class DomAnalyzer:
                     follow_up_content_log = [{'role': 'user', 'message': follow_up}]
                 else:
                     follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
-                    follow_up_content = [{'role': 'user', 'message': f"Markdown: {markdown}\n\n{follow_up}", 'removable': False}]
+                    follow_up_content = [{'role': 'user', 'message': f"Here is the new markdown: {markdown}\n\n{follow_up}", 'removable': False}]
                     follow_up_content_log = [{'role': 'user', 'message': f"Here is the new markdown: {html_doc}\n\n{follow_up}"}]
                     self.md_cache[session_id] = markdown
 

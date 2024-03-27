@@ -155,6 +155,16 @@ class SeleniumAiUtils:
                         if not(0 <= index < len(response.steps) and response.steps[index].action == "enter_text"):
                             break
 
+                    if index < len(response.steps) and response.steps[index].action == "key_enter":
+                        time.sleep(1)
+                        last_action = response.steps[index]
+                        self._execute_action_for_prompt(response.steps[index])
+                        is_valid = True
+                        consecutive_failure_count = 0
+                        accumulated_actions.append(step)
+                        index += 1
+
+
                 except Exception:
                     is_valid = False
                     consecutive_failure_count += 1
@@ -186,6 +196,9 @@ class SeleniumAiUtils:
             elif content.action == "enter_text":
                 self._assert_css_selector_exists(content)
                 self._enter_text_in_element(content.css_selector, content.text)
+
+            elif content.action == "key_enter":
+                self.driver.
 
             elif content.action == "error":
                 return False
