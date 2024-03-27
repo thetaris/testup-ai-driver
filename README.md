@@ -40,6 +40,9 @@ Follow these steps to set up the tool:
    pip install -r requirements.txt
    ```
 
+3. Make sure you have ChromeDriver installed and added to your system's PATH. Instructions for installing ChromeDriver can be found at [ChromeDriver - WebDriver for Chrome](https://sites.google.com/a/chromium.org/chromedriver/).
+
+
 The following software packages are required, as listed in `requirements.txt`:
 
 - `selenium`: For automating web browser interaction.
