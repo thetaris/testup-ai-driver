@@ -27,7 +27,7 @@ class DomAnalyzer:
         1. click (if you need to click something on the screen)
         2. enter_text (if you believe you need to write something)
         3. key_enter ( after enter_text action in search to apply the search)
-        4. scroll (this will trigger a function, that scrolls down in the current webpage) 
+        4. scroll (this will trigger a function, that scrolls down in the current webpage. Use this if you can't find the element but expect it to be there) 
         5. finish (at the end to know that we are done or if all actions have been executed)
         6. error ( the given task cannot be accomplished)
 
@@ -140,7 +140,7 @@ class DomAnalyzer:
                     follow_up_content_log = [{'role': 'user', 'message': follow_up}]
                 else:
                     follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
-                    follow_up_content = [{'role': 'user', 'message': f"Here is the new markdown: {markdown}\n\n{follow_up}", 'removable': False}]
+                    follow_up_content = [{'role': 'user', 'message': f"Here is the new markdown representation of the currently visible section of the page on which you will execute the actions: {markdown}\n\n{follow_up}", 'removable': False}]
                     follow_up_content_log = [{'role': 'user', 'message': f"Here is the new markdown: {html_doc}\n\n{follow_up}"}]
                     self.md_cache[session_id] = markdown
 

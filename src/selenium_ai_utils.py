@@ -9,6 +9,8 @@ import time
 from user_exceptions import PromptActionException
 from user_exceptions import SeleniumBrokenLinkException
 from test_steps import TestSteps
+from selenium.webdriver.common.action_chains import ActionChains
+
 
 
 
@@ -198,7 +200,8 @@ class SeleniumAiUtils:
                 self._enter_text_in_element(content.css_selector, content.text)
 
             elif content.action == "key_enter":
-                self.driver.
+                actions = ActionChains(self.driver)
+                actions.send_keys(Keys.ENTER).perform()
 
             elif content.action == "error":
                 return False
