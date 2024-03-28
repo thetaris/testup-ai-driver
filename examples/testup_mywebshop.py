@@ -11,7 +11,9 @@ def setup_driver():
     """Initialize and configure the Chrome WebDriver."""
     chrome_options = Options()
     # chrome_options.add_argument("--headless")  # Uncomment to enable headless mode
+    #chrome_options.add_argument("window-size=1920x1080")  # Set specific resolution --- Doesn't seem to work
     driver = webdriver.Chrome(options=chrome_options)
+    driver.set_window_size(1920, 1080)  # Explicitly set the window size
     return driver
 
 
@@ -24,7 +26,9 @@ def main():
         selenium_utils.set_local_driver(driver, url)
 
         # Test steps
-        selenium_utils.execute_prompt("put any product in shopping cart")
+        selenium_utils.execute_prompt("search for album")
+        time.sleep(1)  # Wait for the page to update
+        selenium_utils.execute_prompt("add album to the cart ")
         time.sleep(1)  # Wait for the page to update
         selenium_utils.execute_prompt("go to the shopping cart")
 
