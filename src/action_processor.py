@@ -150,11 +150,6 @@ class DomAnalyzer:
                     assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': False}
                     self.md_cache[session_id] = markdown
 
-                # check if prompt is a result of retry, clean up
-                if not id_used or not formatted:
-                    assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': True}
-                else:
-                    assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': False}
                 # add assistant_content, follow_up_content to the cache
 
                 try:
