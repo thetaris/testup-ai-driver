@@ -251,7 +251,8 @@ class SeleniumAiUtils:
     def _assign_auto_generated_ids(self):
         js_script = textwrap.dedent("""
                 function generateUniqueId(index) {
-                    return "autoidtestup" + index;
+                    var timestamp = new Date().getTime();
+                    return "autoidtestup" + index + "T" + timestamp;
                 }
         
                 const elements = document.querySelectorAll('li, button, input, textarea, [type=text], a');
