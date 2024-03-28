@@ -25,7 +25,12 @@ class GptClient:
     def make_request(self, contents):
         if self.rate_limiter.wait_and_check():
             # logging.info("Going to make request")
-            api_info = api_map_json[self.gpt_model]
+            if "gpt-3.5-turbo-1106" in self.gpt_model:
+                api_info = api_map_json["gpt-3.5-turbo-1106"]
+            elif "gpt-3.5-turbo" in self.gpt_model:
+                api_info = api_map_json["gpt-3.5-turbo"]
+            else:
+                raise Exception("Failed to get tokens to execute request")
             payload = api_info['payload'](self.gpt_model, contents)
             logging.info("##############################################################################################################")
             logging.info(f"sending:  {contents}")

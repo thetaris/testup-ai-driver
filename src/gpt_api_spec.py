@@ -43,7 +43,7 @@ api_map_json = {
     "gpt-3.5-turbo": {
         "endpoint": "https://api.openai.com/v1/chat/completions",
         "payload": payload_chat_completions_json
-    }
+    },
 }
 
 

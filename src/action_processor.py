@@ -95,6 +95,7 @@ class DomAnalyzer:
                     return extracted_response
 
                 except ValueError as e:
+                    logging.warn(f"Failed with value error: {e}")
                     attempts += 1
 
                     # Check the specific error message to set formatted and id_used accordingly
@@ -125,15 +126,15 @@ class DomAnalyzer:
                 except Exception as e:
                     formatted = True
                     attempts += 1
-                    # logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
+                    logging.warn(f"Failed to get response, next attempt#{attempts}: {e} ")
                     time.sleep(1)
                     continue
             else:
                 executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
-
+                follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
                 if markdown == self.md_cache[session_id]:
-                    follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
-                    prefix_message = f"Again, Here is the markdown representation of the currently visible section of the page on which you will execute the actions: {markdown}\n\n" if attempts == max_retries-1 else ""
+                    prefix_message = f"Again, Here is the markdown representation of the currently visible section " \
+                                     f"of the page on which you will execute the actions: {markdown}\n\n" if attempts == max_retries-1 else ""
                     if not id_used or not formatted:
                         follow_up_content = [{'role': 'user', 'message': f"{prefix_message}{follow_up}", 'removable': True}]
                         assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': True}
@@ -142,8 +143,10 @@ class DomAnalyzer:
                         assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': False}
                     follow_up_content_log = [{'role': 'user', 'message': f"{prefix_message}{follow_up}"}]
                 else:
-                    follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
-                    follow_up_content = [{'role': 'user', 'message': f"Here is the new markdown representation of the currently visible section of the page on which you will execute the actions: {markdown}\n\n{follow_up}", 'removable': False}]
+
+                    follow_up_content = [{'role': 'user', 'message': f"Here is the new markdown "
+                                                                     f"representation of the currently visible section of the page on which you will execute the actions: "
+                                                                     f"{markdown}\n\n{follow_up}", 'removable': False}]
                     follow_up_content_log = [{'role': 'user', 'message': f"Here is the new markdown: {html_doc}\n\n{follow_up}"}]
                     assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': False}
                     self.md_cache[session_id] = markdown
@@ -198,8 +201,7 @@ class DomAnalyzer:
 
                 except Exception as e:
                     attempts += 1
-                    # logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
-
+                    logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
                     time.sleep(1)
                     continue
 
