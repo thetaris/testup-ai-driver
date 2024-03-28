@@ -9,6 +9,8 @@ import time
 from user_exceptions import PromptActionException
 from user_exceptions import SeleniumBrokenLinkException
 from test_steps import TestSteps
+from selenium.webdriver.common.action_chains import ActionChains
+
 
 
 
@@ -155,6 +157,16 @@ class SeleniumAiUtils:
                         if not(0 <= index < len(response.steps) and response.steps[index].action == "enter_text"):
                             break
 
+                    if index < len(response.steps) and response.steps[index].action == "key_enter":
+                        time.sleep(1)
+                        last_action = response.steps[index]
+                        self._execute_action_for_prompt(response.steps[index])
+                        is_valid = True
+                        consecutive_failure_count = 0
+                        accumulated_actions.append(step)
+                        index += 1
+
+
                 except Exception:
                     is_valid = False
                     consecutive_failure_count += 1
@@ -186,6 +198,10 @@ class SeleniumAiUtils:
             elif content.action == "enter_text":
                 self._assert_css_selector_exists(content)
                 self._enter_text_in_element(content.css_selector, content.text)
+
+            elif content.action == "key_enter":
+                actions = ActionChains(self.driver)
+                actions.send_keys(Keys.ENTER).perform()
 
             elif content.action == "error":
                 return False
@@ -235,7 +251,8 @@ class SeleniumAiUtils:
     def _assign_auto_generated_ids(self):
         js_script = textwrap.dedent("""
                 function generateUniqueId(index) {
-                    return "autoidtestup" + index;
+                    var timestamp = new Date().getTime();
+                    return "autoidtestup" + index + "T" + timestamp;
                 }
         
                 const elements = document.querySelectorAll('li, button, input, textarea, [type=text], a');

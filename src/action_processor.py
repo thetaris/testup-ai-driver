@@ -27,7 +27,7 @@ class DomAnalyzer:
         1. click (if you need to click something on the screen)
         2. enter_text (if you believe you need to write something)
         3. key_enter ( after enter_text action in search to apply the search)
-        4. scroll (this will trigger a function, that scrolls down in the current webpage) 
+        4. scroll (this will trigger a function, that scrolls down in the current webpage. Use this if you can't find the element but expect it to be there) 
         5. finish (at the end to know that we are done or if all actions have been executed)
         6. error ( the given task cannot be accomplished)
 
@@ -133,22 +133,21 @@ class DomAnalyzer:
 
                 if markdown == self.md_cache[session_id]:
                     follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
+                    prefix_message = f"Again, Here is the markdown representation of the currently visible section of the page on which you will execute the actions: {markdown}\n\n" if attempts == max_retries-1 else ""
                     if not id_used or not formatted:
-                        follow_up_content = [{'role': 'user', 'message': follow_up, 'removable': True}]
+                        follow_up_content = [{'role': 'user', 'message': f"{prefix_message}{follow_up}", 'removable': True}]
+                        assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': True}
                     else:
-                        follow_up_content = [{'role': 'user', 'message': follow_up, 'removable': False}]
-                    follow_up_content_log = [{'role': 'user', 'message': follow_up}]
+                        follow_up_content = [{'role': 'user', 'message': f"{prefix_message}{follow_up}", 'removable': False}]
+                        assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': False}
+                    follow_up_content_log = [{'role': 'user', 'message': f"{prefix_message}{follow_up}"}]
                 else:
                     follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
-                    follow_up_content = [{'role': 'user', 'message': f"Markdown: {markdown}\n\n{follow_up}", 'removable': False}]
+                    follow_up_content = [{'role': 'user', 'message': f"Here is the new markdown representation of the currently visible section of the page on which you will execute the actions: {markdown}\n\n{follow_up}", 'removable': False}]
                     follow_up_content_log = [{'role': 'user', 'message': f"Here is the new markdown: {html_doc}\n\n{follow_up}"}]
+                    assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': False}
                     self.md_cache[session_id] = markdown
 
-                # check if prompt is a result of retry, clean up
-                if not id_used or not formatted:
-                    assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': True}
-                else:
-                    assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': False}
                 # add assistant_content, follow_up_content to the cache
 
                 try:
