@@ -24,7 +24,6 @@ class GptClient:
 
     def make_request(self, contents):
         if self.rate_limiter.wait_and_check():
-            # logging.info("Going to make request")
             if "gpt-3.5-turbo-1106" in self.gpt_model:
                 api_info = api_map_json["gpt-3.5-turbo-1106"]
             elif "gpt-3.5-turbo" in self.gpt_model:
@@ -72,11 +71,6 @@ class GptClient:
             except json.JSONDecodeError:
                 raise Exception("Error decoding the extracted content as JSON.")
 
-            # logging.info(f"Tokens: {total_tokens}")
-            # Store in new JSON object
-            # logging.info("##############################################################################################################")
-            # logging.info(f"Returning: {assistant_message}")
-            # logging.info("##############################################################################################################")
             return assistant_message
         elif "error" in response_data and response_data["error"].get("code", "") == 'context_length_exceeded':
             raise TokenLimitExceededError(response_data["error"].get("message", "Token limit exceeded"))

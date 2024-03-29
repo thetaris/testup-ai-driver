@@ -42,19 +42,40 @@ except openai.APIStatusError as e:
     print(e.response)
 
 print(fine_tune_response)
-
+print("Going to wait until the fine tuning job starts")
+time.sleep(60)
+specific_job_running = False
 while True:
-
     first_page = client.fine_tuning.jobs.list(
         limit=20,
     )
 
+    # Flag to check if the specific job is found and running
+    job_found = False
     for job in first_page.data:
-        print(job)
-        if job.status == "succeeded":
+        # Check if the current job's training_file matches the specific file ID
+        if job.training_file == file_id:
+            job_found = True
+            if job.status == "running":
+                print("Job is still running.")
+                specific_job_running = True
+            elif job.status == "succeeded":
+                specific_job_running = False
+                print("Job has finished successfully")
+                print(f"Fined Tuned Model={job.fine_tuned_model}")
+                print(f"To use fined tune model, run export GPT_MODEL={job.fine_tuned_model}")
+            else:
+                specific_job_running = False
+                print(f"Found the specific job, but its status is {job.status}.")
             break
+
+    if not job_found:
+        print("Unable to find job, please check openai cp")
+        break
+
+    if not specific_job_running:
+        print("Going to stop since job is not running, please check openai cp")
+        break
+
     time.sleep(1)
 
-#job
-# job.fine_tuned_model
-#print command export GPT_MODEL=ft:gpt-3.5-turbo-1106:thetaris::97mA1Kg5
