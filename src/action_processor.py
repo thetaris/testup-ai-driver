@@ -133,17 +133,17 @@ class DomAnalyzer:
                 executed_actions_str = '\n'.join([f"{idx+1}.{self.format_action(action)}" for idx, action in enumerate(actions_executed)])
                 follow_up = self.resolve_follow_up(duplicate, valid, formatted, id_used, self.format_action(last_action), executed_actions_str, user_prompt, variables_string)
                 if markdown == self.md_cache[session_id]:
-                    prefix_message = f"Again, Here is the markdown representation of the currently visible section " \
-                                     f"of the page on which you will execute the actions: {markdown}\n\n" if attempts == max_retries-1 else ""
+                    prefix_message = f"Again, Here is the markdown representation of the currently visible section of the page on which you will execute the actions: {markdown}\n\n" if attempts == max_retries-1 else ""
+                    prefix_message_log = f"Again, Here is the markdown representation of the currently visible section of the page on which you will execute the actions: {html_doc}\n\n" if attempts == max_retries-1 else ""
                     if not id_used or not formatted:
                         follow_up_content = [{'role': 'user', 'message': f"{prefix_message}{follow_up}", 'removable': True}]
                         assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': True}
+                        follow_up_content_log = [{'role': 'user', 'message': f"{prefix_message_log}{follow_up}", 'removable': True}]
                     else:
                         follow_up_content = [{'role': 'user', 'message': f"{prefix_message}{follow_up}", 'removable': False}]
                         assistant_content = {'role': 'assistant', 'message': self.format_action(last_action), 'removable': False}
-                    follow_up_content_log = [{'role': 'user', 'message': f"{prefix_message}{follow_up}"}]
+                        follow_up_content_log = [{'role': 'user', 'message': f"{prefix_message_log}{follow_up}", 'removable': False}]
                 else:
-
                     follow_up_content = [{'role': 'user', 'message': f"Here is the new markdown "
                                                                      f"representation of the currently visible section of the page on which you will execute the actions: "
                                                                      f"{markdown}\n\n{follow_up}", 'removable': False}]
@@ -221,7 +221,6 @@ class DomAnalyzer:
 
 
     def variableMap_to_string(self, input_map):
-
         if not input_map:
             return ""
 
