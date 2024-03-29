@@ -83,7 +83,7 @@ To start using the tool:
 
 1. Run the app:
    ```bash
-   python example/selenium_ai_app.py
+   python examples/selenium_ai_app.py
    ```
 
 ## Example Test Script
@@ -108,10 +108,11 @@ and actions.
 
 
 # Model Fine-Tuning
-Fine-tuning a model requires preparing your data in a specific format, this section guides you through the process of preparing your data by converting HTML content to Markdown, which is a preferred format for text-based machine learning tasks due to its simplicity, readability and reduced size.
+Fine-tuning a model will help ensuring getting more accurate results from the gpt model, the process requires training data in a specific format, this section guides you through the process of preparing your training data and executing the fine-tuning 
+by converting HTML content to Markdown, which is a preferred format for text-based machine learning tasks due to its simplicity, readability and reduced size.
 
 ## Preparing Your Data
-Before fine-tuning your model , you need to convert your HTML-based data into Markdown. This ensures that the model trains on data that is in a clean, standardized format.
+Before fine-tuning your model, your data needs to be prepared to match the required the prompt provided by testup utils.
 
 ## Prerequisites
 - Python3 installed on your system
@@ -125,11 +126,15 @@ Your input files should be in JSON format, with each file containing an array fo
      "messages": [
        {
          "role": "system",
-         "content": "Structured HTML content here..."
+         "content": "Rules/instructions"
        },
        {
          "role": "user",
-         "content": "HTML content to be converted to Markdown..."
+         "content": "Structured HTML content here"
+       },
+       {
+         "role": "assistant",
+         "content": "Expected response"
        }
      ]
    }
@@ -138,19 +143,32 @@ Your input files should be in JSON format, with each file containing an array fo
 
 
 ## HTML to Markdown Conversion
-- **Place Input Files:** Copy your input JSON files into the `data/input` directory. This script is designed to process all files in this directory.
-- **Execute the Conversion Script:** Run the script from the root directory of your project. Use the following command:
+To reduce the processed tokens, 
+- **Place Input Files:** Copy your input JSON files into the `scripts/data/input` directory. This script is designed to process all files in this directory.
+- **Run the Conversion Script:** Execute the following command from your project's root directory:
    ```bash
    python scripts/prepare_training_data.py
   ```
-- **Collect the Converted Files:** After the script has finished running, find the converted Markdown files in the `data/output` directory. Each file is named according to its corresponding input file with an addition `_md` postfix to indicate the conversion.
+- **Retrieve Converted Files:** Find the Markdown-converted files in the `scripts/data/output` directory, marked with an `_md` postfix.
 
-## Post-conversion
-Once your data is in Markdown format , you can proceed with the fine-tuning process. This standardized format will help ensure better model performance by training on data that is cleaner and more uniform.
+## Fine-Tuning Your Model
+Once your data is prepared and converted to Markdown, you can fine-tune your model using the provided script.
 
+### Running the Fine-Tuning Script
+Execute the fine-tuning script with the following command, which will use the converted Markdown data for training:
+   ```bash
+   python3 scripts/fine_tune.py scripts/data/output/training_data_md.jsonl
+  ```
+The script will process the training data and initiate the fine-tuning job. It will continue to run until the fine-tuning is complete, at which point it will display the new model ID.
 
+## Setting the New Trained Model
+After the fine-tuning process is finished and you have your new model ID, you can set your environment to use this trained model for future tasks:
+   ```bash
+   export GPT_MODEL=<new trained model>
+  ```
 
-## Contributing
+Replace `<new trained model>` with the actual model ID provided after the fine-tuning process.
 
+# Contributing
 Contributions are welcome! Fork the repository, make your changes, and submit a pull request.
 
