@@ -45,6 +45,7 @@ print(fine_tune_response)
 print("Going to wait until the fine tuning job starts")
 time.sleep(60)
 specific_job_running = False
+count = 60
 while True:
     first_page = client.fine_tuning.jobs.list(
         limit=20,
@@ -57,7 +58,7 @@ while True:
         if job.training_file == file_id:
             job_found = True
             if job.status == "running":
-                print("Job is still running.")
+                print(f"Job is still running. {count} seconds elapsed")
                 specific_job_running = True
             elif job.status == "succeeded":
                 specific_job_running = False
@@ -77,5 +78,6 @@ while True:
         print("Going to stop since job is not running, please check openai cp")
         break
 
+    count = count+1
     time.sleep(1)
 
