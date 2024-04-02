@@ -5,9 +5,9 @@ sys.path.append('../src')
 from md_converter import convert_to_md
 
 
-input_dir_path = 'scripts/data/input'
+input_dir_path = 'data/input'
 
-output_dir_path = 'scripts/data/output'
+output_dir_path = 'data/output'
 
 os.makedirs(output_dir_path, exist_ok=True)
 
