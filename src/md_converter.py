@@ -25,8 +25,8 @@ def convert_to_md(html_doc):
 
     soup = BeautifulSoup(html_doc, 'html.parser')
 
-    for script in soup.find_all('script'):
-        script.decompose()
+    for element in soup(['script', 'style', 'iframe', 'noscript']):
+        element.decompose()
 
     # Remove all comments, which includes CDATA
     for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):

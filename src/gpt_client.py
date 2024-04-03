@@ -19,6 +19,7 @@ class GptClient:
     gpt_model = os.getenv("GPT_MODEL", "gpt-3.5-turbo-1106")
 
     def __init__(self):
+        logging.debug("initiating GPT client")
         self.operation_lock = threading.Lock()
         self.rate_limiter = RateLimiter(max_requests_per_minute=20, max_tokens_per_minute=160000)
 
@@ -31,9 +32,9 @@ class GptClient:
             else:
                 raise Exception("Failed to get tokens to execute request")
             payload = api_info['payload'](self.gpt_model, contents)
-            logging.info("##############################################################################################################")
-            logging.info(f"sending:  {contents}")
-            logging.info("##############################################################################################################")
+            logging.debug("##############################################################################################################")
+            logging.debug(f"sending:  {contents}")
+            logging.debug("##############################################################################################################")
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.gpt_api_key}"
@@ -47,7 +48,7 @@ class GptClient:
     def extract_response(self, response):
         response_data = response.json()
 
-        logging.info(f"Response from openai {response_data}")
+        logging.debug(f"Response from openai {response_data}")
 
         response_object_type = response_data.get('object', '')
 

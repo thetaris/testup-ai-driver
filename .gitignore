@@ -11,7 +11,7 @@ target/
 dist/
 
 #output
-data/output/*
+scripts/data/output/*
 
 # Deployment
 deployment.yaml

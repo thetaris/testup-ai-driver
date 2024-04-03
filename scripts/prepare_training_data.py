@@ -1,7 +1,7 @@
 import json
 import sys
 import os
-sys.path.append('../src')
+sys.path.append('src')
 from md_converter import convert_to_md
 
 
