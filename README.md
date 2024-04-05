@@ -6,6 +6,9 @@ This project introduces an AI-driven tool to automate website testing through Se
 This tool is brought to you by [testup.io](https://testup.io),
 the easist no-code test automation tool on the web.
 
+
+[![Explanation video](https://img.youtube.com/vi/CAshKM5lQIM/0.jpg)](https://www.youtube.com/watch?v=CAshKM5lQIM)
+
 ## Features
 
 - **DOM Tree compression** To limit the token count sent to the AI model the first step is to reduce the DOM to relevant information.
