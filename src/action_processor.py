@@ -86,7 +86,7 @@ class DomAnalyzer:
                     self.md_cache[session_id] = markdown
                     extracted_response = self.extract_steps(response)
                     if not extracted_response or extracted_response == {}:  # Check if the response is empty
-                        raise ValueError("Empty or invlaid response")
+                        raise ValueError("Empty or invalid response")
 
                     first_step = extracted_response.get('steps', [{}])[0]  # Safely get the first step
                     if first_step.get('css_selector', '').find('#') == -1 and first_step.get('action') not in ['finish', 'error', 'scroll']:

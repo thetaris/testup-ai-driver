@@ -2,7 +2,7 @@ node_modules/
 dist/
 *.py[cod]
 *.log
-
+.env
 # Package files
 *.jar
 
