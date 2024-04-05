@@ -7,7 +7,7 @@ This tool is brought to you by [testup.io](https://testup.io),
 the easist no-code test automation tool on the web.
 
 
-[![Explanation video](https://img.youtube.com/vi/CAshKM5lQIM/0.jpg)](https://www.youtube.com/watch?v=CAshKM5lQIM)
+[![Explanation video](https://img.youtube.com/vi/YlGgri1IILM/0.jpg)](https://www.youtube.com/watch?v=YlGgri1IILM)
 
 ## Features
 
