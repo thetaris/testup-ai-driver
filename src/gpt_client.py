@@ -8,7 +8,7 @@ from rate_limiter import RateLimiter
 from gpt_api_spec import api_map, api_map_json
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class GptClient:
@@ -19,7 +19,7 @@ class GptClient:
     gpt_model = os.getenv("GPT_MODEL", "gpt-3.5-turbo-1106")
 
     def __init__(self):
-        logging.debug("initiating GPT client")
+        logging.info("initiating GPT client")
         self.operation_lock = threading.Lock()
         self.rate_limiter = RateLimiter(max_requests_per_minute=20, max_tokens_per_minute=160000)
 
@@ -32,9 +32,9 @@ class GptClient:
             else:
                 raise Exception("Failed to get tokens to execute request")
             payload = api_info['payload'](self.gpt_model, contents)
-            logging.debug("##############################################################################################################")
-            logging.debug(f"sending:  {contents}")
-            logging.debug("##############################################################################################################")
+            logging.info("##############################################################################################################")
+            logging.info(f"sending:  {contents}")
+            logging.info("##############################################################################################################")
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.gpt_api_key}"
@@ -48,7 +48,7 @@ class GptClient:
     def extract_response(self, response):
         response_data = response.json()
 
-        logging.debug(f"Response from openai {response_data}")
+        logging.info(f"Response from openai {response_data}")
 
         response_object_type = response_data.get('object', '')
 
