@@ -8,7 +8,7 @@ from rate_limiter import RateLimiter
 from gpt_api_spec import api_map, api_map_json
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class GptClient:
