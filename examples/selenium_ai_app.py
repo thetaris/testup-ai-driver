@@ -3,6 +3,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium_ai_utils import SeleniumAiUtils  # Make sure this is correctly imported
 import re
 import argparse
+from dotenv import load_dotenv
+
 
 
 def display_start_screen():
@@ -158,6 +160,10 @@ def setup_arg_parser():
 
 
 def main():
+
+
+    # Load environment variables from .env file
+    load_dotenv()
     display_start_screen()
 
     parser = setup_arg_parser()
@@ -168,6 +174,8 @@ def main():
     chrome_options.add_argument(f"window-size={args.resolution}")
 
     driver = webdriver.Chrome(options=chrome_options)
+    driver.set_window_size(1920, 1080)  # Explicitly set the window size
+
     url = "https://mywebsite.testup.io/"
     selenium_utils = SeleniumAiUtils()
     selenium_utils.set_local_driver(driver, url)
