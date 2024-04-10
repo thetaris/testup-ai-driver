@@ -21,7 +21,7 @@ class GptClient:
     gpt_model = os.getenv("GPT_MODEL", "gpt-3.5-turbo-1106")
 
     def __init__(self):
-        logging.debug("initiating GPT client")
+        logging.info("initiating GPT client")
         self.operation_lock = threading.Lock()
         self.rate_limiter = RateLimiter(max_requests_per_minute=20, max_tokens_per_minute=160000)
 
@@ -65,7 +65,7 @@ class GptClient:
     def extract_response_gpt(self, response):
         response_data = response.json()
 
-        logging.debug(f"Response from openai {response_data}")
+        logging.info(f"Response from openai {response_data}")
 
         response_object_type = response_data.get('object', '')
 

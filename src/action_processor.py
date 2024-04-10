@@ -293,7 +293,7 @@ class DomAnalyzer:
     def print_prompt(self, session_id):
         logging.info("###########################################"
                      "###########################################")
-        logging.info(f"actual: {self.cache[session_id]}")
+        # logging.info(f"history: {self.log_cache[session_id]}")
         logging.info("###########################################"
                      "###########################################")
 
