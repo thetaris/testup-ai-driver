@@ -37,8 +37,7 @@ selenium_utils.execute_prompt("put any product in shopping cart")
    pip install -r requirements.txt
    ```
 
-2. Make sure you have ChromeDriver installed and added to your system's PATH. Instructions for installing ChromeDriver can be found at [ChromeDriver - WebDriver for Chrome](https://sites.google.com/a/chromium.org/chromedriver/).
-
+2. Make sure you have ChromeDriver installed and added to your system's PATH. Instructions for installing ChromeDriver can be found at [ChromeDriver - WebDriver for Chrome](https://chromedriver.chromium.org/).
 
 3.  If you are using an ide you can then add `src` and `examples` to your source root paths and add
 `test` to your test root path. Alternatively you can set it up in the shell:

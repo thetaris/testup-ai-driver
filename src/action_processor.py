@@ -53,7 +53,7 @@ class DomAnalyzer:
         self.md_cache = TTLCache(maxsize=1000, ttl=3600)
         self.gpt_client = GptClient()
 
-    def get_actions(self, session_id, user_prompt, html_doc, actions_executed, variables_string="", duplicate=False, valid=True, last_action=None, user_input=user_input_default, system_input=system_input_default):
+    def get_actions(self, session_id, user_prompt, html_doc, actions_executed, variables_string="", duplicate=False, valid=True, last_action=None, user_input=user_input_default, system_input=system_input_default, return_history=False):
 
         markdown = convert_to_md(html_doc)
 
@@ -86,12 +86,14 @@ class DomAnalyzer:
                     self.md_cache[session_id] = markdown
                     extracted_response = self.extract_steps(response)
                     if not extracted_response or extracted_response == {}:  # Check if the response is empty
-                        raise ValueError("Empty or invlaid response")
+                        raise ValueError("Empty or invalid response")
 
                     first_step = extracted_response.get('steps', [{}])[0]  # Safely get the first step
                     if first_step.get('css_selector', '').find('#') == -1 and first_step.get('action') not in ['finish', 'error', 'scroll']:
                         raise ValueError("Condition not met: cssSelector does not use ID or action is not 'finish'")
 
+                    if return_history is True:
+                        extracted_response['history'] = self.md_cache[session_id]
                     return extracted_response
 
                 except ValueError as e:
@@ -169,6 +171,8 @@ class DomAnalyzer:
                     first_step = extracted_response.get('steps', [{}])[0]  # Safely get the first step
                     if first_step.get('css_selector', '').find('#') == -1 and first_step.get('action') not in ['finish', 'error', 'scroll']:
                         raise ValueError("Condition not met: cssSelector does not use ID or action is not 'finish'")
+                    if return_history is True:
+                        extracted_response['history'] = self.md_cache[session_id]
 
                     return extracted_response
 
@@ -204,7 +208,8 @@ class DomAnalyzer:
                     logging.info(f"Failed to get response, next attempt#{attempts}: {e} ")
                     time.sleep(1)
                     continue
-
+        if return_history is True:
+            extracted_response['history'] = self.md_cache[session_id]
         return {"steps": [{"action": "Error", "text": "Failed to get action"}]}
 
     def format_action(self, action):
@@ -282,13 +287,13 @@ class DomAnalyzer:
                     return convert_keys_to_lowercase({'steps': [parsed_json]})
             except json.JSONDecodeError as e:
                 continue
-        logging.info("Unable to parse JSON structure from the message")
+        logging.debug("Unable to parse JSON structure from the message")
         return {}
 
     def print_prompt(self, session_id):
         logging.info("###########################################"
                      "###########################################")
-        logging.info(f"actual: {self.cache[session_id]}")
+        # logging.info(f"history: {self.log_cache[session_id]}")
         logging.info("###########################################"
                      "###########################################")
 

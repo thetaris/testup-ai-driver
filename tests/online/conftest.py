@@ -2,6 +2,7 @@
 import logging
 from datetime import datetime
 from pathlib import Path
+import dotenv
 
 import pytest
 import sys
@@ -26,6 +27,7 @@ def data_file_path():
 
 
 def pytest_configure(config):
+    dotenv.load_dotenv()
     log_folder = "logs"
     os.makedirs(log_folder, exist_ok=True)  # Create the folder if it doesn't exist
 

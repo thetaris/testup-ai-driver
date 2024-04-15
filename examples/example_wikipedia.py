@@ -11,8 +11,10 @@ def setup_driver():
     chrome_options = Options()
     # chrome_options.add_argument("--headless")  # Uncomment for headless mode
     # chrome_options.add_argument("window-size=1920x1080")  # Set specific resolution
+    driver = webdriver.Chrome(options=chrome_options)
+    driver.set_window_size(1920, 1080)  # Explicitly set the window size
 
-    return webdriver.Chrome(options=chrome_options)
+    return driver
 
 
 def check_wikipedia_page_title(driver, expected_title):
