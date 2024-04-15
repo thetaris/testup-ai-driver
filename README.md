@@ -101,17 +101,12 @@ by converting HTML content to Markdown, which is a preferred format for text-bas
 ## HTML to Markdown Conversion
 The first step of training is to reduce the HTML content from `scripts/data/input` directory.  Execute the following command from your project's root directory:
 ```bash
-<<<<<<< HEAD
-python3 scripts/prepare_training_data.py
-=======
 cd scripts
 python prepare_training_data.py
->>>>>>> origin/main
 ```
 ## Fine-Tuning Your Model
 Once your data is prepared and converted to Markdown, you can fine-tune your model using the provided script. Execute the fine-tuning script with the following command, which will use the converted Markdown data for training:
    ```bash
-   
   python3 fine_tune.py
   ```
 The script will process the training data and initiate the fine-tuning job. It will continue to run until the fine-tuning is complete, at which point it will display the new model ID.
