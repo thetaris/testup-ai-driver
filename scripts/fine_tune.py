@@ -4,12 +4,7 @@ from openai import OpenAI
 import os
 import argparse
 
-parser = argparse.ArgumentParser(description='Fine-tune GPT-3.5 Turbo model with a specified training file.')
-parser.add_argument('file_path', type=str, help='Path to the training file')
-
-args = parser.parse_args()
-
-file_path = args.file_path
+file_path = "data/output/training_data_md.jsonl"
 
 
 client = OpenAI(
