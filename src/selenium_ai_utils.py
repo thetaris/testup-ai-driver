@@ -103,96 +103,96 @@ class SeleniumAiUtils:
         is_duplicate = False
         is_valid = True
 
-        # while True:
-        #     if consecutive_action_count > 5:
-        #         raise PromptActionException(
-        #             "Generative AI is stuck at the same action, please try again")
-        #     if consecutive_failure_count > 5:
-        #         raise PromptActionException(
-        #             "Generative AI generated invalid actions consecutively, please try again")
-        #     if current_step > 100:
-        #         break
+        while True:
+            if consecutive_action_count > 5:
+                raise PromptActionException(
+                    "Generative AI is stuck at the same action, please try again")
+            if consecutive_failure_count > 5:
+                raise PromptActionException(
+                    "Generative AI generated invalid actions consecutively, please try again")
+            if current_step > 100:
+                break
 
-        self._assign_auto_generated_ids()
-        visible_dom = self._get_visible_dom()
-        file_path = 'example.txt'
-        with open(file_path, 'a') as file:
-            file.write("#############################################################################################\n")
-            file.write(f"HTML: {visible_dom}\n")
-            file.write("#############################################################################################\n")
+            self._assign_auto_generated_ids()
+            visible_dom = self._get_visible_dom()
+        #file_path = 'example.txt'
+        # with open(file_path, 'a') as file:
+        #     file.write("#############################################################################################\n")
+        #     file.write(f"HTML: {visible_dom}\n")
+        #     file.write("#############################################################################################\n")
 
-        #     try:
-        #         response = self.dom_analyzer.get_actions(1234, prompt, visible_dom, accumulated_actions, variables_map, is_duplicate, is_valid, last_action)
-        #         response = TestSteps(response)
-        #     except Exception as ex:
-        #         logging.error("Failed to call Prompt Service: %s", ex)
-        #         raise PromptActionException("Failed to get Action from Generative AI model")
-        #
-        #     if not response.steps:
-        #         consecutive_failure_count += 1
-        #         last_action = None
-        #         continue
-        #
-        #     index = 0
-        #
-        #     if last_action == response.steps[index]:
-        #         consecutive_action_count += 1
-        #         is_duplicate = True
-        #         if consecutive_action_count > 5:
-        #             raise PromptActionException(
-        #                 "Generative AI is stuck at the same action, please try again")
-        #         index += 1
-        #         continue
-        #     else:
-        #         consecutive_action_count = 1
-        #         is_duplicate = False
-        #
-        #     step = response.steps[index]
-        #     if step.action == "enter_text":
-        #         try:
-        #             while True:
-        #                 step = response.steps[index]
-        #                 last_action = step
-        #                 self._execute_action_for_prompt(step)
-        #                 is_valid = True
-        #                 consecutive_failure_count = 0
-        #                 accumulated_actions.append(step)
-        #                 index += 1
-        #
-        #                 if not(0 <= index < len(response.steps) and response.steps[index].action == "enter_text"):
-        #                     break
-        #
-        #             if index < len(response.steps) and response.steps[index].action == "key_enter":
-        #                 time.sleep(1)
-        #                 last_action = response.steps[index]
-        #                 self._execute_action_for_prompt(response.steps[index])
-        #                 is_valid = True
-        #                 consecutive_failure_count = 0
-        #                 accumulated_actions.append(step)
-        #                 index += 1
-        #
-        #
-        #         except Exception:
-        #             is_valid = False
-        #             consecutive_failure_count += 1
-        #             continue
-        #     else:
-        #         try:
-        #             last_action = step
-        #             if not self._execute_action_for_prompt(step):
-        #                 break
-        #             is_valid = True
-        #             consecutive_failure_count = 0
-        #             accumulated_actions.append(step)
-        #         except Exception:
-        #             is_valid = False
-        #             consecutive_failure_count += 1
-        #             continue
-        #
-        #     time.sleep(3)
-        #
-        # if not accumulated_actions:
-        #     raise PromptActionException("No actions were executed")
+            try:
+                response = self.dom_analyzer.get_actions(1234, prompt, visible_dom, accumulated_actions, variables_map, is_duplicate, is_valid, last_action)
+                response = TestSteps(response)
+            except Exception as ex:
+                logging.error("Failed to call Prompt Service: %s", ex)
+                raise PromptActionException("Failed to get Action from Generative AI model")
+
+            if not response.steps:
+                consecutive_failure_count += 1
+                last_action = None
+                continue
+
+            index = 0
+
+            if last_action == response.steps[index]:
+                consecutive_action_count += 1
+                is_duplicate = True
+                if consecutive_action_count > 5:
+                    raise PromptActionException(
+                        "Generative AI is stuck at the same action, please try again")
+                index += 1
+                continue
+            else:
+                consecutive_action_count = 1
+                is_duplicate = False
+
+            step = response.steps[index]
+            if step.action == "enter_text":
+                try:
+                    while True:
+                        step = response.steps[index]
+                        last_action = step
+                        self._execute_action_for_prompt(step)
+                        is_valid = True
+                        consecutive_failure_count = 0
+                        accumulated_actions.append(step)
+                        index += 1
+
+                        if not(0 <= index < len(response.steps) and response.steps[index].action == "enter_text"):
+                            break
+
+                    if index < len(response.steps) and response.steps[index].action == "key_enter":
+                        time.sleep(1)
+                        last_action = response.steps[index]
+                        self._execute_action_for_prompt(response.steps[index])
+                        is_valid = True
+                        consecutive_failure_count = 0
+                        accumulated_actions.append(step)
+                        index += 1
+
+
+                except Exception:
+                    is_valid = False
+                    consecutive_failure_count += 1
+                    continue
+            else:
+                try:
+                    last_action = step
+                    if not self._execute_action_for_prompt(step):
+                        break
+                    is_valid = True
+                    consecutive_failure_count = 0
+                    accumulated_actions.append(step)
+                except Exception:
+                    is_valid = False
+                    consecutive_failure_count += 1
+                    continue
+
+            time.sleep(3)
+
+        if not accumulated_actions:
+            raise PromptActionException("No actions were executed")
 
     def _execute_action_for_prompt(self, content):
         try:
