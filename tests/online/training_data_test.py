@@ -1,6 +1,6 @@
 import pytest
 import logging
-from action_processor import DomAnalyzer
+from action_processor import DomAnalyzer, convert_keys_to_lowercase
 from gpt_client import GptClient
 import json
 
@@ -19,7 +19,7 @@ class TestmyWebshop_test:
         # Teardown code here, if any
 
     def test_training_data(self, setup, data_file_path):
-        file_path = data_file_path / 'training_data_1.jsonl'
+        file_path = data_file_path / 'training_data.jsonl'
         counter = 0
         with open(file_path, 'r', encoding='utf-8') as file:
             for line in file:
@@ -47,11 +47,11 @@ class TestmyWebshop_test:
                                 response = self.gpt_client.make_request(prompts)
                                 logging.info(f"actual: {response}")
                                 logging.info(f"training_data: {message['content']}")
-                                result = self.action_processor.extract_steps(response)
+                                result = convert_keys_to_lowercase(self.action_processor.extract_steps(response))
 
                                 if not result or result == {}:  # Check if the response is empty
                                     continue
-                                assistant_actions = json.loads(message['content'])
+                                assistant_actions = convert_keys_to_lowercase(json.loads(message['content']))
                                 matched = False
                                 for expected_item in assistant_actions:
                                     if not matched:
@@ -76,6 +76,8 @@ class TestmyWebshop_test:
 
                                 if matched:
                                     score += 1
+                            except Exception as e:
+                                logging.error(e)
                             finally:
                                 prompts.append({'role': message['role'], 'message': message['content']})
                     if attempt == 0:

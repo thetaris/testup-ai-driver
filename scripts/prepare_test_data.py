@@ -36,7 +36,7 @@ for filename in os.listdir(input_dir_path):
             modified_json_line.append(json.dumps(item, ensure_ascii=False))
 
         # Construct the output file path
-        output_file_path = os.path.join(output_dir_path, os.path.splitext(filename)[0] + '_md.jsonl')
+        output_file_path = os.path.join(output_dir_path, os.path.splitext(filename)[0] + '_test_md.jsonl')
 
         # Write the modified JSON string to the output file
         with open(output_file_path, 'w') as output_file:
