@@ -1,6 +1,6 @@
 import pytest
 import logging
-from action_processor import DomAnalyzer
+from action_processor import DomAnalyzer, convert_keys_to_lowercase
 from gpt_client import GptClient
 import json
 
@@ -45,28 +45,37 @@ class TestmyWebshop_test:
                             total = total+1
                             try:
                                 response = self.gpt_client.make_request(prompts)
-                                # logging.info(f"actual: {response}")
-                                # logging.info(f"training_data: {message['content']}")
-                                result = self.action_processor.extract_steps(response)
+                                logging.info(f"actual: {response}")
+                                logging.info(f"training_data: {message['content']}")
+                                result = convert_keys_to_lowercase(self.action_processor.extract_steps(response))
 
                                 if not result or result == {}:  # Check if the response is empty
-                                    if response == message['content']:
-                                        score = score+1
-                                else:
-                                    step = result.get('steps', [{}])[0]
-                                    expected_action = json.loads(message['content']).get('action', '').lower()
-                                    actual_action = step.get('action', '').lower()
+                                    continue
+                                assistant_actions = convert_keys_to_lowercase(json.loads(message['content']))
+                                matched = False
+                                for expected_item in assistant_actions:
+                                    if not matched:
+                                        step = result.get('steps', [{}])[0]
+                                        expected_action = expected_item.get('action', '').lower()
+                                        actual_action = step.get('action', '').lower()
 
-                                    match = True
+                                        if expected_action == "finish" or expected_action == "scroll":
+                                            if actual_action == expected_action:
+                                                matched = True
+                                            break
 
-                                    if expected_action != actual_action:
-                                        match = False
-                                    if expected_action != 'key_enter' and json.loads(message['content']).get('css_selector', '') != step.get('css_selector', ''):
-                                        match = False
-                                    if expected_action == 'enter_text' and json.loads(message['content']).get('text', '').lower() != step.get('text', '').lower():
-                                        match = False
-                                    if match is True:
-                                        score = score+1
+                                        if expected_action == actual_action:
+                                            css_match = expected_item.get('css_selector', '') == step.get('css_selector', '')
+                                            text_match = True
+                                            if expected_action == 'enter_text':
+                                                text_match = expected_item.get('text', '').lower() == step.get('text', '').lower()
+                                            matched = css_match and text_match
+
+                                    if matched:
+                                        break
+
+                                if matched:
+                                    score += 1
                             except Exception as e:
                                 logging.error(e)
                             finally:
