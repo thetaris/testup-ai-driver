@@ -1,4 +1,5 @@
 import json
+import logging
 import sys
 import os
 sys.path.append('src')
@@ -25,13 +26,20 @@ for filename in os.listdir(input_dir_path):
             # Check each message for the relevant content
             for message in item["messages"]:
                 # Look for the specific phrases in the content
-                if "Here is the Markdown" in message["content"] or "Here is the new markdown" in message["content"]:
-                    # Extract the HTML content
-                    html_content = message["content"]
-                    # Convert the HTML to Markdown
-                    markdown_content = convert_to_md(html_content)
-                    # Replace the original content with the new Markdown content
-                    message["content"] = markdown_content
+                if message["role"] == "assistant":
+                    assistant_content = json.loads(message["content"])
+                    try:
+                        message["content"] = assistant_content[0]
+                    except Exception as e:
+                        logging.error(e)
+                else:
+                    if "Here is the Markdown" in message["content"] or "Here is the new markdown" in message["content"]:
+                        # Extract the HTML content
+                        html_content = message["content"]
+                        # Convert the HTML to Markdown
+                        markdown_content = convert_to_md(html_content)
+                        # Replace the original content with the new Markdown content
+                        message["content"] = markdown_content
 
             modified_json_line.append(json.dumps(item, ensure_ascii=False))
 
