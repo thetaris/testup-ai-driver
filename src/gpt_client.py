@@ -31,11 +31,11 @@ class GptClient:
         if "gpt" in self.gpt_model:
             self.rate_limiter = RateLimiter(max_requests_per_minute=20, max_tokens_per_minute=160000)
         elif "claude-3-opus" in self.gpt_model:
-            self.rate_limiter = RateLimiter(max_requests_per_minute=1000, max_tokens_per_minute=40000)
+            self.rate_limiter = RateLimiter(max_requests_per_minute=10, max_tokens_per_minute=20000)
         elif "claude-3-haiku" in self.gpt_model:
-            self.rate_limiter = RateLimiter(max_requests_per_minute=1000, max_tokens_per_minute=100000)
+            self.rate_limiter = RateLimiter(max_requests_per_minute=10, max_tokens_per_minute=50000)
         elif "claude-3-sonnet" in self.gpt_model:
-            self.rate_limiter = RateLimiter(max_requests_per_minute=1000, max_tokens_per_minute=80000)
+            self.rate_limiter = RateLimiter(max_requests_per_minute=10, max_tokens_per_minute=40000)
         else:
             raise Exception("No Rate Limiter for this model configured")
 
