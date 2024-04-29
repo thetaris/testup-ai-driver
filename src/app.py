@@ -8,6 +8,7 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Server")
 
+
 dom_analyzer = DomAnalyzer()
 @app.route('/api/v1/prompt/<session_id>', methods=['POST'])
 def process_prompt(session_id):

@@ -53,10 +53,16 @@ class TestmyWebshop_test:
                                     continue
                                 assistant_actions = convert_keys_to_lowercase(json.loads(message['content']))
                                 matched = False
+
+                                counter = 0
                                 for expected_item in assistant_actions:
+                                    counter += 1
                                     if not matched:
                                         step = result.get('steps', [{}])[0]
                                         expected_action = expected_item.get('action', '').lower()
+                                        if counter == 1:
+                                            first_action = expected_action
+
                                         actual_action = step.get('action', '').lower()
 
                                         if expected_action == "finish" or expected_action == "scroll":
@@ -79,7 +85,7 @@ class TestmyWebshop_test:
                             except Exception as e:
                                 logging.error(e)
                             finally:
-                                prompts.append({'role': message['role'], 'message': message['content']})
+                                prompts.append({'role': message['role'], 'message': first_action})
                     if attempt == 0:
                         logging.info(f"Task:{task}")
                     logging.info(f"Attempt#{attempt+1}: Score: {score}/{total}")
