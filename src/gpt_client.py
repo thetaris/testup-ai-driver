@@ -20,8 +20,8 @@ class GptClient:
     load_dotenv(dotenv_path=path_to_env_file, verbose = True)
 
     gpt_api_key = os.getenv("OPENAI_API_KEY")
-    x_api_key = os.getenv('X_API_KEY_thetaris', "")
-    max_requests_per_minute = os.getenv("MAX_REQUESTS", 20)
+    x_api_key = os.getenv('X_API_KEY', "")
+    max_requests_per_minute = os.getenv("MAX_REQUESTS", 10)
     max_tokens_per_minute = os.getenv("MAX_TOKENS", 160000)
     gpt_model = os.getenv("GPT_MODEL", "gpt-3.5-turbo-1106")
 
@@ -81,49 +81,48 @@ class GptClient:
         return num_tokens
 
     def make_request(self, contents):
-        if self.rate_limiter.wait_and_check():
-            if "gpt-3.5-turbo-1106" in self.gpt_model:
-                api_info = api_map_json["gpt-3.5-turbo-1106"]
-            elif "gpt-3.5-turbo" in self.gpt_model:
-                api_info = api_map_json["gpt-3.5-turbo"]
-            elif "claude-3-opus-20240229" in self.gpt_model:
-                api_info = api_map_json["claude-3-opus-20240229"]
-            elif "claude-3-haiku-20240307" in self.gpt_model:
-                api_info = api_map_json["claude-3-haiku-20240307"]
-            elif "claude-3-sonnet-20240229" in self.gpt_model:
-                api_info = api_map_json["claude-3-sonnet-20240229"]
+
+        if "gpt-3.5-turbo-1106" in self.gpt_model:
+            api_info = api_map_json["gpt-3.5-turbo-1106"]
+        elif "gpt-3.5-turbo" in self.gpt_model:
+            api_info = api_map_json["gpt-3.5-turbo"]
+        elif "claude-3-opus-20240229" in self.gpt_model:
+            api_info = api_map_json["claude-3-opus-20240229"]
+        elif "claude-3-haiku-20240307" in self.gpt_model:
+            api_info = api_map_json["claude-3-haiku-20240307"]
+        elif "claude-3-sonnet-20240229" in self.gpt_model:
+            api_info = api_map_json["claude-3-sonnet-20240229"]
 
 
-            else:
-                raise Exception("Failed to get tokens to execute request")
-            payload = api_info['payload'](self.gpt_model, contents)
+
+        payload = api_info['payload'](self.gpt_model, contents)
+        num_token = self.num_tokens_from_messages(payload["messages"])
+        self.rate_limiter.wait_and_check(num_token)
+
+        if self.gpt_model in ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]:
+            headers = {
+                "Content-Type": "application/json",
+                "anthropic-version": "2023-06-01",
+                "x-api-key": f"{self.x_api_key}"
+            }
+
+            response = requests.post(api_info['endpoint'], headers=headers, json=payload)
+            return self.extract_response_claude(response)
+
+        else:
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.gpt_api_key}"
+            }
+
             logging.info("##############################################################################################################")
             logging.info(f"sending:  {contents}")
             logging.info("##############################################################################################################")
 
-            if self.gpt_model in ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]:
-                headers = {
-                    "Content-Type": "application/json",
-                    "anthropic-version": "2023-06-01",
-                    "x-api-key": f"{self.x_api_key}"
-                }
-                if self.num_tokens_from_messages(payload["messages"]) > 32000:
-                    raise TokenLimitExceededError("Token limit exceeded")
-                response = requests.post(api_info['endpoint'], headers=headers, json=payload)
-                return self.extract_response_claude(response)
+            response = requests.post(api_info['endpoint'], headers=headers, json=payload)
+            return self.extract_response_gpt(response)
 
-            else:
-                headers = {
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self.gpt_api_key}"
-                }
-                if self.num_tokens_from_messages(payload["messages"]) > 16000:
-                    raise TokenLimitExceededError("Token limit exceeded")
-                response = requests.post(api_info['endpoint'], headers=headers, json=payload)
-                return self.extract_response_gpt(response)
 
-        logging.error("Failed to get tokens to execute request")
-        raise Exception("Failed to get tokens to execute request")
 
     def extract_response_gpt(self, response):
         response_data = response.json()
