@@ -7,4 +7,4 @@ markdownify
 cachetools
 openai
 tiktoken
-dotenv
+python-dotenv
