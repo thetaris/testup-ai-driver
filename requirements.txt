@@ -6,3 +6,5 @@ beautifulsoup4
 markdownify
 cachetools
 openai
+tiktoken
+python-dotenv
