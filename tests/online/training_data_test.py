@@ -1,7 +1,14 @@
+import datetime
+import os
+import time
+
 import pytest
 import logging
+import pandas as pd
+from dotenv import load_dotenv
+
 from action_processor import DomAnalyzer, convert_keys_to_lowercase
-from gpt_client import GptClient
+from gpt_client import GptClient, RateLimitExceededError
 import json
 
 
@@ -9,7 +16,18 @@ class TestmyWebshop_test:
 
     @pytest.fixture
     def setup(self):
-        # Setup code here, adjust as needed
+        # Initialize an empty DataFrame with relevant columns
+        self.results_df = pd.DataFrame(columns=["Test Name", "Task", "Attempt", "Score", "Total", "Score Percentage"])
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        # Define a directory for test results
+        results_dir = "logs"
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)  # Ensure the directory exists
+
+        self.result_file = os.path.join(results_dir, f"test_results_{timestamp}.csv")
+
+        # Load environment variables from .env file
+        load_dotenv()
         logging.info('Test setup completed')
         self.gpt_client = GptClient()
         self.action_processor = DomAnalyzer()
@@ -89,5 +107,19 @@ class TestmyWebshop_test:
                     if attempt == 0:
                         logging.info(f"Task:{task}")
                     logging.info(f"Attempt#{attempt+1}: Score: {score}/{total}")
+
+                    # Construct a new DataFrame for the current test results and concatenate it with the main DataFrame
+                    new_row = pd.DataFrame({
+                        "Test Name": [f"Test for {data_file_path.name}"],
+                        "Task": [task],
+                        "Attempt": [attempt + 1],
+                        "Score": [score],
+                        "Total": [total],
+                        "Score Percentage": [f"{(score / total * 100) if total > 0 else 0}%"]
+                    })
+                    self.results_df = pd.concat([self.results_df, new_row], ignore_index=True)
+
+        # Save results to CSV after all tests are completed
+        self.results_df.to_csv(self.result_file, index=False)
         logging.info('Test case 1 completed successfully')
 

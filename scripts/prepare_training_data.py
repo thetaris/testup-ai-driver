@@ -47,7 +47,7 @@ for filename in os.listdir(input_dir_path):
         output_file_path = os.path.join(output_dir_path, os.path.splitext(filename)[0] + '_md.jsonl')
 
         # Write the modified JSON string to the output file
-        with open(output_file_path, 'w') as output_file:
+        with open(output_file_path, 'w', encoding='utf-8') as output_file:
             output_file.write('\n'.join(modified_json_line))
 
         print(f"The modified content has been written to '{output_file_path}'")

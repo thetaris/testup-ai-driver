@@ -51,6 +51,11 @@ api_map_json = {
     "claude-3-haiku-20240307": {
         "endpoint": "https://api.anthropic.com/v1/messages",
         "payload": payload_chat_completions_claude_json
+    },
+    "claude-3-sonnet-20240229": {
+        "endpoint": "https://api.anthropic.com/v1/messages",
+        "payload": payload_chat_completions_claude_json
     }
+
 
 }

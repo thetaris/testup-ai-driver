@@ -177,6 +177,7 @@ class DomAnalyzer:
                     return extracted_response
 
                 except ValueError as e:
+                    logging.warn(f"Failed with value error: {e}")
                     attempts += 1
                     last_action = response
                     # Check the specific error message to set formatted and id_used accordingly
@@ -276,18 +277,24 @@ class DomAnalyzer:
             except json.JSONDecodeError as e:
                 continue
 
-        pattern = r'(\{.*"action".*\})'
+        pattern = r'"steps":\s*\[(.*?\})\s*\]'
         matches = re.findall(pattern, json_str, re.DOTALL)
 
-        for match in matches:
-            try:
-                potential_json = match
-                parsed_json = json.loads(potential_json)
-                if 'action' in parsed_json:
-                    return convert_keys_to_lowercase({'steps': [parsed_json]})
-            except json.JSONDecodeError as e:
-                continue
-        logging.debug("Unable to parse JSON structure from the message")
+        # If matches are found, try to parse each one
+        if matches:
+            # Build a proper JSON string by enclosing the matched content in an array
+            for match in matches:
+                potential_json = '[' + match + ']'
+                try:
+                    # Attempt to parse the JSON
+                    parsed_json = json.loads(potential_json)
+                    # If successful, return the converted data
+                    return convert_keys_to_lowercase({'steps': parsed_json})
+                except json.JSONDecodeError as e:
+                    logging.debug(f"Failed to parse JSON for matched steps: {e}")
+                    continue
+
+        logging.debug("No valid 'steps' array found or all parsing attempts failed.")
         return {}
 
     def print_prompt(self, session_id):

@@ -12,6 +12,7 @@ dist/
 
 #output
 scripts/data/output/*
+tests/online/logs/
 
 # Deployment
 deployment.yaml
@@ -23,3 +24,5 @@ deployment.yaml
 Thumbs.db
 
 test_summaries
+
+.ipynb_checkpoints/

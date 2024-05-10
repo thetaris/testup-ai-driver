@@ -113,6 +113,13 @@ class SeleniumAiUtils:
             if current_step > 100:
                 break
 
+            self._assign_auto_generated_ids()
+            visible_dom = self._get_visible_dom()
+        #file_path = 'example.txt'
+        # with open(file_path, 'a') as file:
+        #     file.write("#############################################################################################\n")
+        #     file.write(f"HTML: {visible_dom}\n")
+        #     file.write("#############################################################################################\n")
 
             try:
                 response = self.dom_analyzer.get_actions(1234, prompt, visible_dom, accumulated_actions, variables_map, is_duplicate, is_valid, last_action)
